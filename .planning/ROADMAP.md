@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — Project scaffolding (backend + frontend + Docker Compose + R sandbox)
 - [x] 01-02-PLAN.md — Auth backend (User model, JWT, register/login/me endpoints, tests)
-- [ ] 01-03-PLAN.md — Celery + R sandbox (async task queue, Docker R execution, job endpoints)
+- [x] 01-03-PLAN.md — Celery + R sandbox (async task queue, Docker R execution, job endpoints)
 - [ ] 01-04-PLAN.md — Frontend UI (auth page, app shell, sidebar, job status card)
 - [ ] 01-05-PLAN.md — Digital Ocean deployment (Dockerfile, nginx, HTTPS, deploy script)
 
