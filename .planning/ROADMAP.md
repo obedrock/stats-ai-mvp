@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 5 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffolding (backend + frontend + Docker Compose + R sandbox)
+- [x] 01-01-PLAN.md — Project scaffolding (backend + frontend + Docker Compose + R sandbox)
 - [ ] 01-02-PLAN.md — Auth backend (User model, JWT, register/login/me endpoints, tests)
 - [ ] 01-03-PLAN.md — Celery + R sandbox (async task queue, Docker R execution, job endpoints)
 - [ ] 01-04-PLAN.md — Frontend UI (auth page, app shell, sidebar, job status card)
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Infrastructure | 0/TBD | Not started | - |
+| 1. Foundation & Infrastructure | 1/5 | In Progress|  |
 | 2. Data Pipeline | 0/TBD | Not started | - |
 | 3. Core Analysis Engine | 0/TBD | Not started | - |
 | 4. Extended Analysis Types | 0/TBD | Not started | - |
