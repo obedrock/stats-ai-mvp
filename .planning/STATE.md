@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 01-01-PLAN.md (scaffold)
-last_updated: "2026-03-23T21:13:05.400Z"
+stopped_at: Completed 01-02-PLAN.md (auth backend)
+last_updated: "2026-03-23T21:20:02.038Z"
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 01 (foundation-infrastructure) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Plan: 2 of 5
 
 *Updated after each plan completion*
 | Phase 01 P01 | 30 | 2 tasks | 31 files |
+| Phase 01 P02 | 6 | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -61,6 +62,9 @@ Recent decisions affecting current work:
 - fredapi may need a fallback (pyfredapi or fedfred) — validate in Phase 2 implementation
 - [Phase 01]: Python 3.12 managed via uv python install; dark theme set as :root default (slate-950/indigo-500); Tailwind CSS v4 via @tailwindcss/vite (no tailwind.config.js)
 - [Phase 01]: Docker Desktop not installed on dev machine — all Docker files authored correctly but services cannot run locally until Docker is installed
+- [Phase 01]: SQLAlchemy Uuid (cross-DB) used over postgresql.UUID to support SQLite test environment
+- [Phase 01]: bcrypt pinned to <5 due to passlib incompatibility with bcrypt 5.0 API changes
+- [Phase 01]: aiosqlite in-memory SQLite for auth tests since Docker/PostgreSQL unavailable locally
 
 ### Pending Todos
 
@@ -74,6 +78,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T21:13:05.396Z
-Stopped at: Completed 01-01-PLAN.md (scaffold)
+Last session: 2026-03-23T21:20:02.034Z
+Stopped at: Completed 01-02-PLAN.md (auth backend)
 Resume file: None
