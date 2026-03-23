@@ -102,50 +102,50 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| DATA-03 | — | Pending |
-| DATA-04 | — | Pending |
-| DATA-05 | — | Pending |
-| DATA-06 | — | Pending |
-| DATA-07 | — | Pending |
-| DATA-08 | — | Pending |
-| DATA-09 | — | Pending |
-| DATA-10 | — | Pending |
-| DATA-11 | — | Pending |
-| DATA-12 | — | Pending |
-| DATA-13 | — | Pending |
-| DATA-14 | — | Pending |
-| DATA-15 | — | Pending |
-| DATA-16 | — | Pending |
-| ANAL-01 | — | Pending |
-| ANAL-02 | — | Pending |
-| ANAL-03 | — | Pending |
-| ANAL-04 | — | Pending |
-| ANAL-05 | — | Pending |
-| ANAL-06 | — | Pending |
-| ANAL-07 | — | Pending |
-| ANAL-08 | — | Pending |
-| ANAL-09 | — | Pending |
-| ANAL-10 | — | Pending |
-| RSLT-01 | — | Pending |
-| RSLT-02 | — | Pending |
-| RSLT-03 | — | Pending |
-| RSLT-04 | — | Pending |
-| RSLT-05 | — | Pending |
-| RSLT-06 | — | Pending |
-| RSLT-07 | — | Pending |
-| HIST-01 | — | Pending |
-| HIST-02 | — | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| DATA-01 | Phase 2 | Pending |
+| DATA-02 | Phase 2 | Pending |
+| DATA-03 | Phase 2 | Pending |
+| DATA-04 | Phase 2 | Pending |
+| DATA-05 | Phase 2 | Pending |
+| DATA-06 | Phase 2 | Pending |
+| DATA-07 | Phase 2 | Pending |
+| DATA-08 | Phase 2 | Pending |
+| DATA-09 | Phase 2 | Pending |
+| DATA-10 | Phase 2 | Pending |
+| DATA-11 | Phase 2 | Pending |
+| DATA-12 | Phase 2 | Pending |
+| DATA-13 | Phase 2 | Pending |
+| DATA-14 | Phase 2 | Pending |
+| DATA-15 | Phase 2 | Pending |
+| DATA-16 | Phase 2 | Pending |
+| ANAL-01 | Phase 3 | Pending |
+| ANAL-02 | Phase 4 | Pending |
+| ANAL-03 | Phase 4 | Pending |
+| ANAL-04 | Phase 4 | Pending |
+| ANAL-05 | Phase 3 | Pending |
+| ANAL-06 | Phase 3 | Pending |
+| ANAL-07 | Phase 3 | Pending |
+| ANAL-08 | Phase 3 | Pending |
+| ANAL-09 | Phase 4 | Pending |
+| ANAL-10 | Phase 3 | Pending |
+| RSLT-01 | Phase 3 | Pending |
+| RSLT-02 | Phase 3 | Pending |
+| RSLT-03 | Phase 3 | Pending |
+| RSLT-04 | Phase 3 | Pending |
+| RSLT-05 | Phase 3 | Pending |
+| RSLT-06 | Phase 3 | Pending |
+| RSLT-07 | Phase 6 | Pending |
+| HIST-01 | Phase 5 | Pending |
+| HIST-02 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 38 total
-- Mapped to phases: 0
-- Unmapped: 38 ⚠️
+- Mapped to phases: 38
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-23*
-*Last updated: 2026-03-23 after initial definition*
+*Last updated: 2026-03-23 after roadmap creation*
