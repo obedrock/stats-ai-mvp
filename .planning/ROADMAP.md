@@ -12,7 +12,7 @@ Stats-AI is built in six phases that follow a strict dependency order: secure in
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Infrastructure** - Project scaffolding, auth, async job queue, and sandboxed R execution environment
+- [x] **Phase 1: Foundation & Infrastructure** - Project scaffolding, auth, async job queue, and sandboxed R execution environment (completed 2026-03-23)
 - [ ] **Phase 2: Data Pipeline** - Auto-pull from FRED and Yahoo Finance, data cleaning, frequency mismatch handling, user uploads, caching, and data preview
 - [ ] **Phase 3: Core Analysis Engine** - OLS regression with full diagnostics, Claude-powered code generation and interpretation, result display, and error feedback
 - [ ] **Phase 4: Extended Analysis Types** - Logistic, panel, and time-series regression; model comparison
@@ -37,8 +37,8 @@ Plans:
 - [x] 01-01-PLAN.md — Project scaffolding (backend + frontend + Docker Compose + R sandbox)
 - [x] 01-02-PLAN.md — Auth backend (User model, JWT, register/login/me endpoints, tests)
 - [x] 01-03-PLAN.md — Celery + R sandbox (async task queue, Docker R execution, job endpoints)
-- [ ] 01-04-PLAN.md — Frontend UI (auth page, app shell, sidebar, job status card)
-- [ ] 01-05-PLAN.md — Digital Ocean deployment (Dockerfile, nginx, HTTPS, deploy script)
+- [x] 01-04-PLAN.md — Frontend UI (auth page, app shell, sidebar, job status card)
+- [x] 01-05-PLAN.md — Digital Ocean deployment (Dockerfile, nginx, HTTPS, deploy script)
 
 **UI hint**: yes
 
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Infrastructure | 2/5 | In Progress|  |
+| 1. Foundation & Infrastructure | 5/5 | Complete   | 2026-03-23 |
 | 2. Data Pipeline | 0/TBD | Not started | - |
 | 3. Core Analysis Engine | 0/TBD | Not started | - |
 | 4. Extended Analysis Types | 0/TBD | Not started | - |

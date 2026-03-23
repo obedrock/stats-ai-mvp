@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: "Checkpoint: 01-04 Task 3 visual verification pending"
-last_updated: "2026-03-23T21:29:43.510Z"
+stopped_at: Completed 01-05-PLAN.md — awaiting DO droplet provisioning for Task 2 deployment
+last_updated: "2026-03-23T22:01:44.155Z"
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 01 (foundation-infrastructure) — EXECUTING
-Plan: 4 of 5
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Plan: 4 of 5
 | Phase 01 P02 | 6 | 2 tasks | 13 files |
 | Phase 01 P03 | 45 | 3 tasks | 13 files |
 | Phase 01 P04 | 25 | 2 tasks | 8 files |
+| Phase 01 P05 | 2 | 1 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,9 @@ Recent decisions affecting current work:
 - [Phase 01]: bcrypt pinned to <5 due to passlib incompatibility with bcrypt 5.0 API changes
 - [Phase 01]: aiosqlite in-memory SQLite for auth tests since Docker/PostgreSQL unavailable locally
 - [Phase 01]: Manual Alembic migration for jobs table — PostgreSQL not running locally (Docker not installed), autogenerate not available
+- [Phase 01]: nginx proxies /api/* to backend:8000/ — frontend VITE_API_URL=/api at build time
+- [Phase 01]: certbot standalone mode for initial SSL cert provisioning on Digital Ocean droplet
+- [Phase 01]: celery-worker mounts /var/run/docker.sock to spawn R sandbox containers at runtime
 
 ### Pending Todos
 
@@ -81,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T21:29:39.557Z
-Stopped at: Checkpoint: 01-04 Task 3 visual verification pending
+Last session: 2026-03-23T22:01:44.152Z
+Stopped at: Completed 01-05-PLAN.md — awaiting DO droplet provisioning for Task 2 deployment
 Resume file: None
