@@ -1,0 +1,769 @@
+# Phase 2: Data Pipeline - Research
+
+**Researched:** 2026-03-23
+**Domain:** Data acquisition, cleaning, frequency alignment, file upload parsing, Redis caching, Claude-powered series ID mapping
+**Confidence:** HIGH
+
+---
+
+<user_constraints>
+## User Constraints (from CONTEXT.md)
+
+### Locked Decisions
+
+- **D-01:** Claude auto-picks the best-match series (e.g., "GDP" → GDPC1) and shows what it chose — user can override after seeing the selection via editable source chips
+- **D-02:** Every FRED series ID is validated against the FRED /series endpoint before fetching data. If invalid, the system searches FRED for similar series names and suggests alternatives to the user
+- **D-03:** After parsing, detected sources appear as editable chips (e.g., [FRED: GDPC1] [Yahoo: AAPL]) — user can click to change source or series ID before fetch starts
+- **D-04:** Multi-source prompts (e.g., "AAPL price vs GDP growth") fetch all sources in parallel — frequency mismatch dialog handles alignment afterward
+- **D-05:** System auto-resolves frequency mismatches by picking the statistically appropriate method and explains its reasoning — but the dialog always blocks, requiring explicit user confirmation or override before proceeding
+- **D-06:** Mismatch dialog appears after all data is fetched, showing actual data context (e.g., "AAPL has 3,200 daily rows, GDP has 92 quarterly rows — recommending quarterly aggregation via mean")
+- **D-07:** Per PROJECT.md core principle: the system NEVER silently aligns data — user must always confirm the resolution strategy
+- **D-08:** Upload entry point is a dedicated drag-and-drop area alongside the prompt input — click to browse or drag CSV/Excel/JSON files
+- **D-09:** After auto-detecting columns and types, show a table preview (first 5-10 rows) with editable column type dropdowns and role selectors
+- **D-10:** Malformed files are auto-fixed where possible (drop bad rows, coerce types) with a report of all changes made — user sees what was fixed before proceeding
+- **D-11:** Data preview appears as an expandable panel below the prompt after data is fetched/cleaned — scrollable table with first 50 rows, column stats (min/max/mean/missing count), and a "Run Analysis" button
+- **D-12:** Quick mode (default): run with smart defaults, show a collapsible "Assumptions" banner at top of results
+- **D-13:** Detailed mode: show each assumption as a checklist item with recommended defaults pre-selected — user toggles and confirms before execution
+- **D-14:** Quick/Detailed toggle switch near the prompt input — persists across analyses via user preference. Quick is default.
+
+### Claude's Discretion
+
+- Specific FRED series ID mapping logic and fallback strategies
+- Aggregation methods offered in frequency mismatch dialog (mean, last, sum, etc.)
+- Column type auto-detection algorithm for uploads
+- Data preview table styling and column stats selection
+- Cache TTL values (CLAUDE.md suggests: FRED 24h, Yahoo 1h)
+- Redis cache key format and eviction strategy
+
+### Deferred Ideas (OUT OF SCOPE)
+
+None — discussion stayed within phase scope
+</user_constraints>
+
+---
+
+<phase_requirements>
+## Phase Requirements
+
+| ID | Description | Research Support |
+|----|-------------|------------------|
+| DATA-01 | System auto-detects data sources from prompt context (e.g. "GDP" → FRED, "AAPL price" → Yahoo Finance) | Claude tool-use with structured output maps prompt entities → sources + series IDs |
+| DATA-02 | User can override auto-detected data source selection | Source chips with inline edit popover; re-validation on override (D-02) |
+| DATA-03 | System pulls data from FRED API based on detected series | fredapi 0.5.2 via `Fred.get_series(series_id, start, end)`; validate first with `/series` endpoint |
+| DATA-04 | System pulls data from Yahoo Finance API based on detected ticker/series | yfinance 1.2.0 `Ticker(symbol).history(start=, end=, interval='1d')` |
+| DATA-05 | System handles missing values automatically (interpolation, forward-fill, or drop) | pandas 3.0 `fillna`, `interpolate`, `dropna`; strategy reported in Assumptions output |
+| DATA-06 | System aligns different date formats and time zones across sources | pandas `pd.to_datetime`, `tz_localize`/`tz_convert`, `date_range` merge on DatetimeIndex |
+| DATA-07 | System normalizes units (billions vs millions, % vs decimal) | Claude-detected unit metadata; Python scalar multiplication; documented in Assumptions |
+| DATA-08 | System flags or handles outliers automatically | IQR / Z-score detection; reported to user in Assumptions or preview stats bar |
+| DATA-09 | System detects frequency mismatches (daily vs quarterly) and prompts user to choose resolution | pandas `infer_freq`; blocking FrequencyMismatchDialog with resample options (D-05, D-06, D-07) |
+| DATA-10 | System displays assumptions in quick mode — runs with smart defaults, explains in results | AssumptionsBanner component (Collapsible); list generated by pipeline metadata accumulator |
+| DATA-11 | System displays assumptions in detailed mode — lists for user approval before execution | AssumptionsChecklist component; confirmation gate before fetch proceeds |
+| DATA-12 | User can upload CSV, Excel, or JSON files | FastAPI `UploadFile` + python-multipart; pandas `read_csv`/`read_excel(engine="openpyxl")`/`read_json` |
+| DATA-13 | System auto-detects columns, types, and date formats from uploaded files | pandas `infer_objects`, `pd.to_datetime`, dtype introspection; date format detected via `dateutil.parser` |
+| DATA-14 | User can confirm or correct column mappings after auto-detection | ColumnMappingTable component with type dropdowns and role selectors; "Confirm Mapping" gate |
+| DATA-15 | Pulled datasets are cached per user for reuse across analyses | Redis with key `{source}:{series_id}:{start}:{end}` (FRED 24h TTL, Yahoo 1h TTL) via redis[hiredis] |
+| DATA-16 | User can preview cleaned/merged dataset before running analysis | DataPreviewPanel (shadcn Card + Table), first 50 rows, per-column stats bar |
+</phase_requirements>
+
+---
+
+## Summary
+
+Phase 2 builds the data acquisition and preparation pipeline on top of the Phase 1 Celery+FastAPI+Redis foundation. The critical new capability is Claude-driven source and series ID detection from a natural language prompt — mapping user intent ("GDP growth") to concrete series identifiers (FRED: GDPC1) using tool use with structured output. This is followed by parallel data fetching (fredapi + yfinance), explicit frequency mismatch resolution (user-confirmed), and user-facing data preview with an assumptions disclosure system.
+
+The entire backend pipeline runs as a Celery task — a new `fetch_data` task that updates job stage to `fetching_data` with sub-status metadata for per-source progress. The frontend extends JobStatusCard with a sub-status line and adds five new workspace components (PromptInput, SourceChips, UploadDropzone, DataPreviewPanel, FrequencyMismatchDialog, AssumptionsBanner/Checklist). The Job model needs a schema migration to add data-source metadata columns. All new shadcn primitives needed (Dialog, Collapsible, Checkbox, RadioGroup, Textarea, Table) must be installed from the shadcn CLI before implementation begins.
+
+The state of existing code is Phase 1-complete: Celery task pattern established, Job model exists but has no data-source columns, WorkspacePage is a stub, and the five data pipeline libraries (fredapi, yfinance, pandas, anthropic, openpyxl) are not yet in `pyproject.toml`. Phase 2's first wave is infrastructure — add deps, migrate schema, install shadcn components — before any feature work starts.
+
+**Primary recommendation:** Implement in four waves: (1) infrastructure setup (deps, migration, shadcn install), (2) prompt parsing + source chips (Claude tool-use → validated series IDs), (3) parallel data fetch + frequency resolution, (4) file upload + data preview + assumptions UI.
+
+---
+
+## Standard Stack
+
+### Core (all confirmed in CLAUDE.md — versions verified against PyPI where noted)
+
+| Library | Version | Purpose | Why Standard |
+|---------|---------|---------|--------------|
+| fredapi | 0.5.2 | FRED API wrapper | Current version on PyPI (confirmed via search); `Fred.get_series()` + `Fred.search()` cover series fetch and fallback search; synchronous but called from Celery worker so no async needed |
+| yfinance | 1.2.0 | Yahoo Finance market data | 1.x API stabilized; `Ticker.history(start=, end=, interval=)` is the canonical method |
+| pandas | 3.0.1 | Data cleaning, merging, resampling, frequency detection | Mandated by CLAUDE.md; Copy-on-Write is default in 3.0; `infer_freq`, `resample`, `DatetimeIndex` cover all alignment needs |
+| anthropic | 0.86.0 | Claude API for prompt parsing + series ID mapping | Latest PyPI version as of 2026-03-18; `tool_use` mode for structured series ID extraction; also used in Phase 3 for interpretation |
+| openpyxl | 3.1.x | Excel file parsing | Used as pandas `engine="openpyxl"` for `pd.read_excel()`; only Excel parser supported by pandas 3.0 for .xlsx |
+| redis[hiredis] | 5.x | Data caching + Celery broker | Already in pyproject.toml; hiredis gives 10x faster parse; `setex(key, ttl, json)` for dataset cache |
+| python-multipart | 0.0.x | Multipart file upload | Already in pyproject.toml; required by FastAPI UploadFile |
+| aiofiles | 23.x | Async temp file write for uploads | Already in pyproject.toml |
+
+### Supporting
+
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| python-dateutil | 2.9.x | Robust date parsing for uploaded files | Handles ambiguous date formats in user CSV uploads; included transitively via pandas |
+| httpx | 0.27.x | Async HTTP for FRED series validation | Already in pyproject.toml; used to call FRED REST `/series` endpoint for D-02 validation |
+
+### Alternatives Considered
+
+| Instead of | Could Use | Tradeoff |
+|------------|-----------|----------|
+| fredapi 0.5.2 | fedfred 2.1.5 (async FRED client) | fedfred has async support and local caching; fredapi is sync-only but calls happen inside Celery worker so async not needed; fredapi has simpler API and is more battle-tested; use fedfred only if async FRED calls are needed from FastAPI routes directly |
+| fredapi 0.5.2 | pyfredapi | More modern API design; viable alternative if fredapi maintenance stalls; STATE.md notes this as a flagged fallback |
+| anthropic tool_use | Regex/NLP heuristics for series ID mapping | Regex will miss novel phrasings and requires extensive maintenance; Claude with tool use handles the full range of economist vocabulary; the CLAUDE.md spec calls for Claude for NLP |
+| pandas resample | scipy.signal.resample | scipy is for signal processing not time series alignment; pandas resample+asfreq is the standard for economic data |
+
+**Installation (items not yet in pyproject.toml):**
+
+```bash
+cd backend
+uv add fredapi==0.5.2 yfinance==1.2.0 "pandas>=3.0.1" "anthropic>=0.86.0" "openpyxl>=3.1.0"
+```
+
+**Items already present (no action needed):**
+- `redis[hiredis]`, `httpx`, `python-multipart`, `aiofiles` — all in pyproject.toml
+
+---
+
+## Architecture Patterns
+
+### Recommended Project Structure (new files only)
+
+```
+backend/app/
+├── services/
+│   ├── data_pipeline.py      # Orchestrates fetch → clean → merge → cache
+│   ├── fred_fetcher.py       # fredapi wrapper + series validation + search
+│   ├── yahoo_fetcher.py      # yfinance wrapper
+│   ├── file_parser.py        # CSV/Excel/JSON upload parsing + auto-fix
+│   ├── frequency_resolver.py # Frequency detection + resample logic
+│   ├── series_mapper.py      # Claude tool_use for prompt → series ID mapping
+│   └── data_cache.py         # Redis get/set with TTL helpers
+├── routers/
+│   └── data.py               # New: /data/parse-prompt, /data/upload, /data/preview
+├── models/
+│   └── job.py                # Extend: add prompt, data_sources, cache_keys columns
+├── schemas/
+│   ├── jobs.py               # Extend: PromptSubmit schema replaces JobSubmit
+│   └── data.py               # New: ParsedSource, FrequencyConflict, DataPreview schemas
+
+frontend/src/
+├── components/
+│   ├── PromptInput.tsx        # Multi-line textarea with Quick/Detailed toggle
+│   ├── SourceChip.tsx         # Editable chip (Badge + Popover)
+│   ├── UploadDropzone.tsx     # Drag-and-drop + ColumnMappingTable
+│   ├── FrequencyMismatchDialog.tsx  # Blocking Dialog with RadioGroup
+│   ├── DataPreviewPanel.tsx   # Collapsible Card + Table + stats bar
+│   ├── AssumptionsBanner.tsx  # Quick mode: Collapsible banner
+│   └── AssumptionsChecklist.tsx    # Detailed mode: Checkbox list
+├── store/
+│   └── analysis.ts            # Zustand store: prompt, sources, mode, assumptions
+└── pages/
+    └── WorkspacePage.tsx      # Replace stub with full data pipeline UI
+```
+
+### Pattern 1: Claude Tool-Use for Series ID Mapping
+
+**What:** Send the user's prompt to Claude with a `detect_data_sources` tool definition. Claude returns structured JSON: an array of `{source: "FRED"|"YAHOO", series_id: string, display_name: string, rationale: string}` objects. Temperature 0 for determinism.
+
+**When to use:** Every time the user submits a prompt (before fetching). Validate each returned series ID against its source before rendering chips.
+
+**Example:**
+```python
+# backend/app/services/series_mapper.py
+import anthropic
+from pydantic import BaseModel
+
+client = anthropic.Anthropic()
+
+DETECT_TOOL = {
+    "name": "detect_data_sources",
+    "description": "Extract all data series needed to answer the user's statistical analysis request.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "sources": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "source": {"type": "string", "enum": ["FRED", "YAHOO"]},
+                        "series_id": {"type": "string"},
+                        "display_name": {"type": "string"},
+                        "rationale": {"type": "string"}
+                    },
+                    "required": ["source", "series_id", "display_name", "rationale"]
+                }
+            }
+        },
+        "required": ["sources"]
+    }
+}
+
+def map_prompt_to_sources(prompt: str) -> list[dict]:
+    response = client.messages.create(
+        model="claude-sonnet-4-5",
+        max_tokens=512,
+        temperature=0,
+        tools=[DETECT_TOOL],
+        tool_choice={"type": "tool", "name": "detect_data_sources"},
+        messages=[{"role": "user", "content": prompt}]
+    )
+    tool_use = next(b for b in response.content if b.type == "tool_use")
+    return tool_use.input["sources"]
+```
+
+### Pattern 2: FRED Series Validation Before Fetch
+
+**What:** Before showing a chip to the user, call the FRED REST `/series` endpoint with the series ID. A 200 response confirms the series exists. A 400 triggers a search.
+
+**When to use:** After Claude returns series IDs (D-02). Also re-validate after user edits a chip.
+
+```python
+# backend/app/services/fred_fetcher.py
+import httpx
+import os
+
+FRED_BASE = "https://api.stlouisfed.org/fred"
+
+async def validate_series(series_id: str) -> tuple[bool, list[dict]]:
+    """Returns (is_valid, suggestions_if_invalid)."""
+    api_key = os.environ["FRED_API_KEY"]
+    async with httpx.AsyncClient() as client:
+        r = await client.get(
+            f"{FRED_BASE}/series",
+            params={"series_id": series_id, "api_key": api_key, "file_type": "json"},
+            timeout=10.0
+        )
+    if r.status_code == 200:
+        return True, []
+    # Search for suggestions
+    from fredapi import Fred
+    fred = Fred(api_key=api_key)
+    results = fred.search(series_id, limit=5)
+    suggestions = [{"id": idx, "name": row["title"]} for idx, row in results.iterrows()]
+    return False, suggestions
+```
+
+### Pattern 3: Parallel Data Fetch as Celery Task
+
+**What:** New Celery task `fetch_data` fetches all detected sources concurrently using `asyncio.gather` within a thread pool, updates job stage to `fetching_data` with per-source sub-status metadata, and writes each result to Redis cache.
+
+**When to use:** After user confirms source chips and (in detailed mode) assumptions checklist.
+
+```python
+# backend/app/tasks/data_pipeline.py
+import asyncio, json, os
+from .celery_app import celery_app
+from app.services.fred_fetcher import fetch_fred_series
+from app.services.yahoo_fetcher import fetch_yahoo_series
+from app.services.data_cache import get_cached, set_cached
+
+@celery_app.task(bind=True, name="fetch_data")
+def fetch_data(self, job_id: str, sources: list[dict], date_range: dict):
+    results = {}
+    for source in sources:
+        cache_key = f"{source['source'].lower()}:{source['series_id']}:{date_range['start']}:{date_range['end']}"
+        cached = get_cached(cache_key)
+        if cached:
+            self.update_state(state="PROGRESS", meta={
+                "stage": "fetching_data", "job_id": job_id,
+                "sub_status": f"Cache hit: {source['source']}: {source['series_id']}"
+            })
+            results[source["series_id"]] = json.loads(cached)
+            continue
+        self.update_state(state="PROGRESS", meta={
+            "stage": "fetching_data", "job_id": job_id,
+            "sub_status": f"Fetching {source['source']}: {source['series_id']}..."
+        })
+        if source["source"] == "FRED":
+            df = fetch_fred_series(source["series_id"], date_range["start"], date_range["end"])
+        else:
+            df = fetch_yahoo_series(source["series_id"], date_range["start"], date_range["end"])
+        ttl = 86400 if source["source"] == "FRED" else 3600
+        set_cached(cache_key, df.to_json(), ttl)
+        results[source["series_id"]] = json.loads(df.to_json())
+    return {"status": "success", "job_id": job_id, "data": results}
+```
+
+### Pattern 4: Frequency Detection and Resampling
+
+**What:** After all series are fetched, detect each series' inferred frequency with pandas `infer_freq`. If frequencies differ, return a `FrequencyConflict` payload to the frontend. After user confirms resolution, apply `df.resample(target_freq).agg(method)` or `df.asfreq(target_freq, method='ffill')`.
+
+**When to use:** Before merging datasets. Must block — never silently align (D-07).
+
+```python
+# backend/app/services/frequency_resolver.py
+import pandas as pd
+
+def detect_frequencies(dataframes: dict[str, pd.DataFrame]) -> dict[str, str]:
+    return {
+        series_id: pd.infer_freq(df.index) or "irregular"
+        for series_id, df in dataframes.items()
+    }
+
+def apply_resolution(
+    df: pd.DataFrame,
+    target_freq: str,
+    method: str  # "mean", "last", "sum", "ffill"
+) -> pd.DataFrame:
+    if method in ("mean", "last", "sum"):
+        return df.resample(target_freq).agg(method).copy()
+    elif method == "ffill":
+        return df.asfreq(target_freq, method="ffill").copy()
+    raise ValueError(f"Unknown method: {method}")
+```
+
+**Note on pandas 3.0 Copy-on-Write:** Every transformation must call `.copy()` on the result to avoid chained-assignment issues. The pattern above uses `.copy()` explicitly after `resample().agg()`. This is the STATE.md-flagged pitfall.
+
+### Pattern 5: File Upload Parsing with Auto-Fix
+
+**What:** FastAPI endpoint accepts `UploadFile`, writes to a temp file with aiofiles, then dispatches to a sync parser that detects the format (CSV/Excel/JSON), auto-detects column types, drops unparseable rows, and returns a `ParseResult` with the cleaned DataFrame + change log.
+
+**When to use:** Triggered by the upload dropzone (D-08 through D-10).
+
+```python
+# backend/app/services/file_parser.py
+import pandas as pd
+import io
+
+def parse_uploaded_file(content: bytes, filename: str) -> dict:
+    changes = []
+    if filename.endswith(".csv"):
+        df = pd.read_csv(io.BytesIO(content))
+    elif filename.endswith((".xlsx", ".xls")):
+        df = pd.read_excel(io.BytesIO(content), engine="openpyxl")
+    elif filename.endswith(".json"):
+        df = pd.read_json(io.BytesIO(content))
+    else:
+        raise ValueError("Unsupported file type")
+
+    original_len = len(df)
+    df = df.dropna(how="all").copy()  # Drop fully empty rows
+    dropped = original_len - len(df)
+    if dropped:
+        changes.append(f"{dropped} empty rows dropped")
+
+    # Attempt type coercion
+    for col in df.columns:
+        if df[col].dtype == object:
+            coerced = pd.to_numeric(df[col], errors="coerce")
+            if coerced.notna().sum() > 0.8 * df[col].notna().sum():
+                n_coerced = coerced.notna().sum() - df[col].notna().sum()
+                df[col] = coerced
+                if n_coerced > 0:
+                    changes.append(f"{n_coerced} values coerced to numeric in '{col}'")
+
+    return {
+        "dataframe": df,
+        "changes": changes,
+        "preview": df.head(10).to_dict(orient="records"),
+        "columns": [{"name": c, "dtype": str(df[c].dtype)} for c in df.columns]
+    }
+```
+
+### Pattern 6: Redis Cache Helpers
+
+**What:** Thin wrapper over the redis client for the dataset caching layer. Keys follow the CLAUDE.md convention: `{source}:{series_id}:{start}:{end}`.
+
+```python
+# backend/app/services/data_cache.py
+import redis, os
+
+_redis = redis.Redis.from_url(os.environ.get("REDIS_URL", "redis://redis:6379/0"))
+
+def get_cached(key: str) -> str | None:
+    val = _redis.get(key)
+    return val.decode() if val else None
+
+def set_cached(key: str, value: str, ttl: int) -> None:
+    _redis.setex(key, ttl, value)
+```
+
+### Pattern 7: Frontend Zustand Analysis Store
+
+**What:** New store manages the full data pipeline state machine: prompt text, parsed sources, mode (quick/detailed), frequency conflict, assumptions list, and preview data. Persists `analysis-mode` to localStorage.
+
+```typescript
+// frontend/src/store/analysis.ts
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+interface ParsedSource {
+  source: "FRED" | "YAHOO";
+  series_id: string;
+  display_name: string;
+  valid: boolean | null;
+}
+
+interface AnalysisStore {
+  prompt: string;
+  sources: ParsedSource[];
+  mode: "quick" | "detailed";
+  assumptions: string[];
+  previewData: Record<string, unknown>[] | null;
+  setPrompt: (p: string) => void;
+  setSources: (s: ParsedSource[]) => void;
+  setMode: (m: "quick" | "detailed") => void;
+}
+
+export const useAnalysisStore = create<AnalysisStore>()(
+  persist(
+    (set) => ({
+      prompt: "",
+      sources: [],
+      mode: "quick",
+      assumptions: [],
+      previewData: null,
+      setPrompt: (p) => set({ prompt: p }),
+      setSources: (s) => set({ sources: s }),
+      setMode: (m) => set({ mode: m }),
+    }),
+    { name: "stats-ai:analysis-mode", partialize: (s) => ({ mode: s.mode }) }
+  )
+);
+```
+
+### Anti-Patterns to Avoid
+
+- **Silent frequency alignment:** Never call `resample().agg()` without surfacing the FrequencyMismatchDialog first. The dialog must be blocking (`onInteractOutside={e => e.preventDefault()}`).
+- **Chained assignment in pandas 3.0:** `df["col"] = df["col"].str.upper()` without `.copy()` raises a `ChainedAssignmentError`. Always do `df = df.copy()` before in-place mutations.
+- **Calling Claude from a FastAPI route synchronously:** The series-mapping Claude call takes 1-3s. It should run inside the Celery `fetch_data` task or as a separate fast Celery task (`parse_prompt`), not blocking the FastAPI event loop.
+- **fredapi called async:** fredapi is synchronous. Call it from a Celery worker or wrap with `asyncio.get_event_loop().run_in_executor()`. Do not call from an `async def` FastAPI route directly.
+- **Storing DataFrames in Redis as pickle:** Security risk and not portable. Serialize as JSON (`df.to_json()`) and deserialize with `pd.read_json()`.
+- **Using `JobSubmit.r_script` schema for prompt-based submissions:** Phase 2 introduces `PromptSubmit` with natural language + date range + mode. Do not repurpose the Phase 1 `r_script` field — extend the model and schema cleanly.
+
+---
+
+## Don't Hand-Roll
+
+| Problem | Don't Build | Use Instead | Why |
+|---------|-------------|-------------|-----|
+| FRED data fetching | Custom FRED REST client | fredapi 0.5.2 | fredapi handles OAuth, pagination, series metadata, search — all tested |
+| Yahoo Finance fetching | Custom Yahoo Finance scraper | yfinance 1.2.0 | Yahoo Finance blocks scrapers; yfinance uses the official undocumented API that works reliably |
+| Date frequency inference | Custom regex for "is this quarterly?" | `pandas.infer_freq(df.index)` | Handles all edge cases: irregular, business-day, fiscal-quarter offsets |
+| Time series resampling | Custom loop over rows | `df.resample(freq).agg(method)` | pandas resample handles calendar offsets, NaN propagation, all standard aggregation methods |
+| Series ID hallucination guard | Regex allowlist of known series IDs | Validate against FRED `/series` endpoint | FRED has 800,000+ series; any static allowlist will be wrong immediately |
+| CSV/Excel auto-detection | Custom file format detection | pandas `read_csv`/`read_excel` + file extension check | pandas handles encoding detection, BOM, header rows, mixed types |
+| Redis TTL cache | Custom file-based cache | `redis.setex()` | Redis TTL is atomic; file-based caches don't expire cleanly under concurrent Celery workers |
+
+**Key insight:** The data pipeline domain has excellent library coverage. Custom solutions are unnecessary and will be wrong on edge cases (irregular business calendars, DST transitions, FRED series ID namespacing, Yahoo rate limits).
+
+---
+
+## Common Pitfalls
+
+### Pitfall 1: pandas 3.0 Copy-on-Write Violations
+
+**What goes wrong:** Code that worked in pandas 2.x silently, like `df["col"] = df["col"].apply(...)` or `df[mask]["col"] = value`, raises `ChainedAssignmentError` in pandas 3.0.
+
+**Why it happens:** Copy-on-Write is the default in 3.0. Pandas now raises on any in-place mutation of a slice or view.
+
+**How to avoid:** After every filter or slice that will be mutated, call `.copy()`. Rule: if you're about to assign to a column, ensure you own the DataFrame (`df = df.copy()` or use `df.assign()`).
+
+**Warning signs:** `ChainedAssignmentError` in test output; CI passes on a machine with pandas 2.x but fails on server with 3.0.
+
+### Pitfall 2: FRED Series ID Hallucination by Claude
+
+**What goes wrong:** Claude confidently returns a plausible but non-existent FRED series ID (e.g., "GDPGROWTH" instead of "GDPC1"). The fetch call to fredapi returns an empty DataFrame or raises `ValueError`.
+
+**Why it happens:** Claude's training data has FRED series IDs but not the full current catalog. Novel or obscure series will be guessed incorrectly.
+
+**How to avoid:** Always validate the series ID against the FRED `/series` endpoint (D-02) before rendering the chip or starting the fetch. On 400 response, call `Fred.search()` and return suggestions.
+
+**Warning signs:** Empty DataFrame from `Fred.get_series()` without an error; fredapi raising `ValueError: Bad Request`.
+
+### Pitfall 3: Frequency Mismatch Bypass
+
+**What goes wrong:** A future developer adds a "fast path" that skips the FrequencyMismatchDialog when the recommended method is "obvious" (e.g., always aggregate to lower frequency). This violates D-07 and the project's core principle.
+
+**Why it happens:** The dialog feels like friction in the happy path.
+
+**How to avoid:** The FrequencyMismatchDialog must always render and always require an explicit confirm. Set `onInteractOutside={e => e.preventDefault()}` and remove the X close button. There is no code path that proceeds past a detected mismatch without user confirmation.
+
+**Warning signs:** Any code that calls `apply_resolution()` without first receiving a user-confirmed `resolution_method` from the frontend.
+
+### Pitfall 4: Date Timezone Misalignment
+
+**What goes wrong:** FRED returns date-only indexes (no timezone); Yahoo Finance returns timezone-aware `DatetimeIndex` (US/Eastern or UTC depending on interval). A naive `pd.merge` on the index loses rows or duplicates.
+
+**Why it happens:** `DatetimeIndex` with timezone != `DatetimeIndex` without timezone — pandas treats them as incompatible without explicit conversion.
+
+**How to avoid:** Normalize all DatetimeIndexes to UTC before merging. FRED: `df.index = pd.DatetimeIndex(df.index).tz_localize("UTC")`. Yahoo: `df.index = df.index.tz_convert("UTC")`.
+
+**Warning signs:** `pd.merge()` returning far fewer rows than expected; `TypeError: Cannot join tz-naive with tz-aware`.
+
+### Pitfall 5: fredapi Blocking the FastAPI Event Loop
+
+**What goes wrong:** `Fred.get_series()` is synchronous and can take 2-5s. Calling it directly from an `async def` FastAPI route blocks the entire event loop, causing other requests to queue.
+
+**Why it happens:** fredapi uses `requests` internally (synchronous HTTP).
+
+**How to avoid:** All fredapi calls must happen inside the Celery `fetch_data` task (sync context). If a route needs to call fredapi for validation, use `await asyncio.get_event_loop().run_in_executor(None, fred.get_series, ...)` or delegate to a Celery task.
+
+**Warning signs:** FastAPI response times increasing for all users during a single data fetch; uvicorn worker hanging.
+
+### Pitfall 6: Missing shadcn Components Before Implementation
+
+**What goes wrong:** Plan tasks try to import `@/components/ui/dialog` or `@/components/ui/checkbox` but the files don't exist — shadcn components are not auto-installed.
+
+**Why it happens:** shadcn uses a manual preset (no `components.json`). Components must be added explicitly with the shadcn CLI.
+
+**How to avoid:** Wave 0 must install all required new shadcn components before any feature component is implemented. From UI-SPEC, the needed components are: Dialog, Collapsible, Checkbox, RadioGroup, Textarea, Table.
+
+**Warning signs:** `Cannot find module '@/components/ui/dialog'` TypeScript errors.
+
+### Pitfall 7: yfinance 1.x API Changes
+
+**What goes wrong:** Code written for yfinance 0.x used `yf.download(ticker, start, end)` as the primary interface. In 1.x, `Ticker.history()` is preferred and the column names changed slightly (capitalized vs not).
+
+**Why it happens:** The 1.x redesign (Dec 2024/early 2025) was a breaking change from 0.x.
+
+**How to avoid:** Use `yfinance.Ticker(symbol).history(start=start, end=end, interval="1d")` exclusively. Do not use `yf.download()` for single-ticker fetches. Column names are `Open`, `High`, `Low`, `Close`, `Volume` (capitalized) in 1.x.
+
+---
+
+## Environment Availability
+
+| Dependency | Required By | Available | Version | Fallback |
+|------------|------------|-----------|---------|----------|
+| Python | Backend runtime | Partial | AppX stub (Windows); uv manages .venv | Use `uv run` always |
+| uv | Dependency management | Yes | 0.10.12 | — |
+| Node.js | Frontend build | Yes | 24.14.0 | — |
+| npm | Frontend package mgr | Yes | 11.9.0 | — |
+| Docker | R sandbox execution | Yes | 29.3.0 | — |
+| Redis CLI | Local cache testing | No | — | Test via Docker Compose; mock in unit tests |
+| R | Statistical execution | Yes | 4.5.2 | — (not needed for this phase) |
+| fredapi | FRED data fetch | Not installed | — | Add to pyproject.toml: `uv add fredapi==0.5.2` |
+| yfinance | Yahoo data fetch | Not installed | — | Add to pyproject.toml: `uv add yfinance==1.2.0` |
+| pandas | Data manipulation | Not installed | — | Add to pyproject.toml: `uv add "pandas>=3.0.1"` |
+| anthropic | Claude API | Not installed | — | Add to pyproject.toml: `uv add "anthropic>=0.86.0"` |
+| openpyxl | Excel parsing | Not installed | — | Add to pyproject.toml: `uv add "openpyxl>=3.1.0"` |
+
+**Missing dependencies with no fallback:**
+- `FRED_API_KEY` environment variable — must be set in `.env` before FRED validation or fetch can work. Register at https://fred.stlouisfed.org/docs/api/api_key.html (free).
+- `ANTHROPIC_API_KEY` — must be in `.env` for series ID mapping. Already required by the project.
+
+**Missing dependencies with fallback (install-only gap):**
+- All Python libraries listed above (fredapi, yfinance, pandas, anthropic, openpyxl) — no fallback needed; they just need to be added to `pyproject.toml` and installed with `uv sync`.
+
+**Missing shadcn components (install-only gap):**
+The following shadcn components are specified in the UI-SPEC but not yet present in `frontend/src/components/ui/`:
+- `dialog`, `collapsible`, `checkbox`, `radio-group`, `textarea`, `table`
+
+Install command (from `frontend/` directory):
+```bash
+npx shadcn@latest add dialog collapsible checkbox radio-group textarea table
+```
+
+---
+
+## Validation Architecture
+
+### Test Framework
+
+| Property | Value |
+|----------|-------|
+| Framework | pytest 9.0.2 + pytest-asyncio 1.3.0 |
+| Config file | `backend/pyproject.toml` (`asyncio_mode = "auto"`) |
+| Quick run command | `cd backend && uv run pytest tests/test_data_pipeline.py -x -q` |
+| Full suite command | `cd backend && uv run pytest -x -q` |
+
+Frontend tests use vitest (Vite-native). Quick run: `cd frontend && npm run test -- --run`.
+
+### Phase Requirements → Test Map
+
+| Req ID | Behavior | Test Type | Automated Command | File Exists? |
+|--------|----------|-----------|-------------------|-------------|
+| DATA-01 | Claude tool-use returns valid parsed sources for known prompts | unit | `pytest tests/test_series_mapper.py -x` | Wave 0 |
+| DATA-02 | User can override source chip — re-validation fires | integration | `pytest tests/test_data_router.py::test_override_source -x` | Wave 0 |
+| DATA-03 | fredapi fetches correct FRED series, result cached in Redis | unit | `pytest tests/test_fred_fetcher.py -x` | Wave 0 |
+| DATA-04 | yfinance fetches correct Yahoo ticker, result cached | unit | `pytest tests/test_yahoo_fetcher.py -x` | Wave 0 |
+| DATA-05 | Missing values handled by strategy, logged in assumptions | unit | `pytest tests/test_data_pipeline.py::test_missing_value_handling -x` | Wave 0 |
+| DATA-06 | Date timezone normalization: FRED (naive) + Yahoo (tz-aware) merge cleanly | unit | `pytest tests/test_data_pipeline.py::test_timezone_alignment -x` | Wave 0 |
+| DATA-07 | Unit normalization applied and logged | unit | `pytest tests/test_data_pipeline.py::test_unit_normalization -x` | Wave 0 |
+| DATA-08 | Outliers flagged and reported in metadata | unit | `pytest tests/test_data_pipeline.py::test_outlier_detection -x` | Wave 0 |
+| DATA-09 | Frequency mismatch detected, conflict payload returned to frontend | integration | `pytest tests/test_data_router.py::test_frequency_conflict_returned -x` | Wave 0 |
+| DATA-10 | Quick mode: assumptions list populated from pipeline metadata | unit | `pytest tests/test_data_pipeline.py::test_assumptions_quick_mode -x` | Wave 0 |
+| DATA-11 | Detailed mode: assumptions checklist returned, confirmed before fetch | integration | `pytest tests/test_data_router.py::test_assumptions_detailed_gate -x` | Wave 0 |
+| DATA-12 | Upload endpoint accepts CSV, Excel, JSON; rejects invalid types | integration | `pytest tests/test_upload.py -x` | Wave 0 |
+| DATA-13 | Column types auto-detected correctly for known file patterns | unit | `pytest tests/test_file_parser.py::test_type_detection -x` | Wave 0 |
+| DATA-14 | Column mapping corrections accepted and applied | integration | `pytest tests/test_upload.py::test_mapping_override -x` | Wave 0 |
+| DATA-15 | Second fetch for same series+range returns cache hit | unit | `pytest tests/test_data_cache.py -x` | Wave 0 |
+| DATA-16 | Preview endpoint returns first 50 rows + column stats | integration | `pytest tests/test_data_router.py::test_preview_response -x` | Wave 0 |
+
+### Sampling Rate
+
+- **Per task commit:** `cd backend && uv run pytest tests/test_data_pipeline.py -x -q`
+- **Per wave merge:** `cd backend && uv run pytest -x -q`
+- **Phase gate:** Full backend suite green + frontend `npm run test -- --run` green before `/gsd:verify-work`
+
+### Wave 0 Gaps
+
+- [ ] `backend/tests/test_series_mapper.py` — covers DATA-01; mock anthropic client
+- [ ] `backend/tests/test_fred_fetcher.py` — covers DATA-03; mock fredapi + httpx
+- [ ] `backend/tests/test_yahoo_fetcher.py` — covers DATA-04; mock yfinance
+- [ ] `backend/tests/test_data_pipeline.py` — covers DATA-05, DATA-06, DATA-07, DATA-08, DATA-10; mock external calls
+- [ ] `backend/tests/test_frequency_resolver.py` — covers DATA-09 logic; pure unit, no mocks needed
+- [ ] `backend/tests/test_data_cache.py` — covers DATA-15; use fakeredis
+- [ ] `backend/tests/test_file_parser.py` — covers DATA-13; use fixture files
+- [ ] `backend/tests/test_upload.py` — covers DATA-12, DATA-14; fixture CSV/Excel/JSON files in `tests/fixtures/`
+- [ ] `backend/tests/test_data_router.py` — covers DATA-02, DATA-09 (API), DATA-11, DATA-16
+- [ ] `backend/tests/fixtures/` — sample CSV, Excel, JSON files for upload tests
+- [ ] `uv add fakeredis --dev` — required for DATA-15 cache tests without running Redis
+
+---
+
+## Code Examples
+
+### FRED Series Fetch (fredapi 0.5.2)
+
+```python
+# Source: fredapi GitHub + PyPI docs
+from fredapi import Fred
+import os
+
+fred = Fred(api_key=os.environ["FRED_API_KEY"])
+
+# Fetch a series — returns pandas Series with DatetimeIndex
+gdp = fred.get_series("GDPC1", observation_start="2000-01-01", observation_end="2023-12-31")
+# gdp.index is DatetimeIndex (timezone-naive); normalize to UTC before merge
+
+# Search for series by keyword
+results = fred.search("consumer price index", limit=5)
+# results is a DataFrame with columns: id, title, frequency, units, etc.
+```
+
+### Yahoo Finance Fetch (yfinance 1.2.0)
+
+```python
+# Source: yfinance official docs https://ranaroussi.github.io/yfinance/
+import yfinance as yf
+
+ticker = yf.Ticker("AAPL")
+df = ticker.history(start="2010-01-01", end="2023-12-31", interval="1d")
+# df.index is DatetimeIndex with tz (America/New_York); convert to UTC before merge
+# df columns: Open, High, Low, Close, Volume, Dividends, Stock Splits
+```
+
+### pandas Frequency Detection + Resample
+
+```python
+# Source: pandas 3.0.1 official docs
+import pandas as pd
+
+freq = pd.infer_freq(df.index)  # e.g. "QS-OCT", "D", "MS", "A-DEC"
+
+# Downsample daily to quarterly mean
+quarterly = df.resample("QS").mean().copy()
+
+# Upsample quarterly to daily (forward fill)
+daily = df.asfreq("D", method="ffill").copy()
+```
+
+### FastAPI UploadFile Handler
+
+```python
+# Source: FastAPI official docs https://fastapi.tiangolo.com/tutorial/request-files/
+from fastapi import APIRouter, UploadFile, File, HTTPException
+
+router = APIRouter()
+
+ALLOWED_TYPES = {
+    "text/csv", "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/json"
+}
+
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    if file.content_type not in ALLOWED_TYPES:
+        raise HTTPException(400, detail="Unsupported file type")
+    content = await file.read()
+    # Pass to sync parse_uploaded_file() — safe since parsing is CPU-bound
+    # For large files (>10MB), dispatch to Celery instead
+    result = parse_uploaded_file(content, file.filename)
+    return result
+```
+
+### Zustand Persist Pattern (mode persistence)
+
+```typescript
+// Source: Zustand docs https://docs.pmnd.rs/zustand/integrations/persisting-store-data
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+// Only persist the `mode` field, not transient state
+export const useAnalysisStore = create(
+  persist(
+    (set) => ({ mode: "quick", setMode: (m) => set({ mode: m }) }),
+    { name: "stats-ai:analysis-mode", partialize: (s) => ({ mode: s.mode }) }
+  )
+);
+```
+
+---
+
+## State of the Art
+
+| Old Approach | Current Approach | When Changed | Impact |
+|--------------|------------------|--------------|--------|
+| `yf.download(ticker, start, end)` | `Ticker(symbol).history(start=, end=)` | yfinance 1.0 (Dec 2024) | Column names and return type slightly different; 0.x code breaks |
+| pandas 2.x chained assignment | pandas 3.0 CoW — `ChainedAssignmentError` | pandas 3.0 (2024) | All mutation must use `.copy()` explicitly |
+| fredapi as the only async option | fedfred 2.1.5 provides async FRED client | 2025 | If async FRED access from FastAPI routes is needed, fedfred is now viable |
+| anthropic SDK `completion` API | `client.messages.create` + `tool_use` | SDK 0.5+ | Structured series ID extraction now reliable via tool_use with schema |
+
+**Deprecated/outdated:**
+- `yf.download()` for single tickers: still works but `Ticker.history()` is the 1.x canonical path
+- pandas `df.fillna(inplace=True)`: the `inplace=` parameter still works in 3.0 but is now inefficient under CoW; prefer `df = df.fillna(value).copy()`
+
+---
+
+## Open Questions
+
+1. **ANTHROPIC_API_KEY environment variable name and config location**
+   - What we know: The anthropic SDK reads `ANTHROPIC_API_KEY` from environment by default. The backend uses `pydantic-settings` for config.
+   - What's unclear: Whether the key is already in `.env` / `config.py` from Phase 1 foundation work, or needs to be added.
+   - Recommendation: Check `backend/app/config.py` during Wave 1 setup; add `ANTHROPIC_API_KEY: str` and `FRED_API_KEY: str` fields to settings if missing.
+
+2. **Model selection for series ID mapping**
+   - What we know: CLAUDE.md says to use Claude for NLP. Structured outputs (beta) work with `claude-sonnet-4-5` and `claude-opus-4-1`.
+   - What's unclear: Whether to use `claude-sonnet-4-5` (faster, cheaper, available now) or `claude-haiku-3-5` (fastest for simple extraction) for the series-mapping call.
+   - Recommendation: Use `claude-haiku-3-5` with `tool_choice={"type": "tool"}` for deterministic series extraction — it's faster and the task is well-defined enough that the smaller model handles it reliably. Use sonnet/opus for Phase 3 interpretation.
+
+3. **Job model migration strategy with PostgreSQL down locally**
+   - What we know: Docker IS available locally (v29.3.0). PostgreSQL and Redis run inside Docker Compose. Phase 1 used manual Alembic migrations because Docker was not available at the time.
+   - What's unclear: Whether Docker Compose is configured and runnable locally now.
+   - Recommendation: Check `docker-compose.yml` during Wave 1. If services can be started, use `alembic revision --autogenerate` for the job model extension. If not, write the migration manually (established pattern from Phase 1).
+
+---
+
+## Sources
+
+### Primary (HIGH confidence)
+- CLAUDE.md — technology stack spec, cache patterns, frequency conflict handling, R execution pattern
+- `backend/app/tasks/analysis.py` — established Celery task pattern to follow
+- `backend/app/models/job.py` — existing Job model to extend
+- `.planning/phases/02-data-pipeline/02-CONTEXT.md` — user decisions D-01 through D-14
+- `.planning/phases/02-data-pipeline/02-UI-SPEC.md` — component inventory, interaction contracts, shadcn components needed
+- pandas 3.0.1 official docs — `resample`, `asfreq`, `infer_freq` (https://pandas.pydata.org/docs/)
+- FastAPI UploadFile docs — https://fastapi.tiangolo.com/tutorial/request-files/
+
+### Secondary (MEDIUM confidence)
+- fredapi PyPI (https://pypi.org/project/fredapi/) — version 0.5.2 confirmed
+- yfinance official docs (https://ranaroussi.github.io/yfinance/) — 1.x Ticker.history() API
+- anthropic PyPI (https://pypi.org/project/anthropic/) — version 0.86.0 confirmed; tool_use available
+- WebSearch: Claude structured outputs beta — `anthropic-beta: structured-outputs-2025-11-13`, Sonnet 4.5 / Opus 4.1
+
+### Tertiary (LOW confidence)
+- WebSearch: fedfred 2.1.5 async FRED client — mentioned as alternative; not independently verified against official docs
+
+---
+
+## Metadata
+
+**Confidence breakdown:**
+- Standard stack: HIGH — all libraries are project-specified in CLAUDE.md with versions; PyPI versions confirmed via search
+- Architecture: HIGH — patterns derived from existing Phase 1 codebase patterns (Celery task, SQLAlchemy async, Pydantic v2)
+- Pitfalls: HIGH — pandas 3.0 CoW and FRED hallucination are explicitly flagged in STATE.md; others derived from library documentation
+- shadcn component list: HIGH — directly from signed-off UI-SPEC
+
+**Research date:** 2026-03-23
+**Valid until:** 2026-04-22 (30 days — stack is stable; yfinance and fredapi have active but slow release cycles)
