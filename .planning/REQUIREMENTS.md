@@ -1,0 +1,151 @@
+# Requirements: Stats-AI
+
+**Defined:** 2026-03-23
+**Core Value:** The data acquisition and preparation pipeline must work reliably — automatically pulling, cleaning, merging, and transforming data from multiple sources so users never touch raw data.
+
+## v1 Requirements
+
+Requirements for initial release. Each maps to roadmap phases.
+
+### Authentication
+
+- [ ] **AUTH-01**: User can create account with email and password
+- [ ] **AUTH-02**: User can log in and receive a JWT session token
+- [ ] **AUTH-03**: User session persists across browser refresh via stored JWT
+
+### Data Pipeline
+
+- [ ] **DATA-01**: System auto-detects data sources from prompt context (e.g. "GDP" → FRED, "AAPL price" → Yahoo Finance)
+- [ ] **DATA-02**: User can override auto-detected data source selection
+- [ ] **DATA-03**: System pulls data from FRED API based on detected series
+- [ ] **DATA-04**: System pulls data from Yahoo Finance API based on detected ticker/series
+- [ ] **DATA-05**: System handles missing values automatically (interpolation, forward-fill, or drop)
+- [ ] **DATA-06**: System aligns different date formats and time zones across sources
+- [ ] **DATA-07**: System normalizes units (billions vs millions, % vs decimal)
+- [ ] **DATA-08**: System flags or handles outliers automatically
+- [ ] **DATA-09**: System detects frequency mismatches (daily vs quarterly) and prompts user to choose resolution strategy
+- [ ] **DATA-10**: System displays assumptions (levels vs %, log transforms, lag structure) in quick mode — runs with smart defaults, explains in results
+- [ ] **DATA-11**: System displays assumptions in detailed mode — lists for user approval before execution
+- [ ] **DATA-12**: User can upload CSV, Excel, or JSON files
+- [ ] **DATA-13**: System auto-detects columns, types, and date formats from uploaded files
+- [ ] **DATA-14**: User can confirm or correct column mappings after auto-detection
+- [ ] **DATA-15**: Pulled datasets are cached per user for reuse across analyses
+- [ ] **DATA-16**: User can preview cleaned/merged dataset before running analysis
+
+### Analysis Engine
+
+- [ ] **ANAL-01**: User can run OLS regression via natural language prompt
+- [ ] **ANAL-02**: User can run logistic regression via natural language prompt
+- [ ] **ANAL-03**: User can run panel data regression (fixed/random effects) via natural language prompt
+- [ ] **ANAL-04**: User can run time series analysis (ARIMA, VAR) via natural language prompt
+- [ ] **ANAL-05**: System automatically runs diagnostic tests: heteroskedasticity (Breusch-Pagan)
+- [ ] **ANAL-06**: System automatically runs diagnostic tests: autocorrelation (Durbin-Watson)
+- [ ] **ANAL-07**: System automatically runs diagnostic tests: multicollinearity (VIF)
+- [ ] **ANAL-08**: System automatically runs diagnostic tests: normality (Shapiro-Wilk)
+- [ ] **ANAL-09**: User can compare models within a session (AIC/BIC, F-tests, pseudo-R2)
+- [ ] **ANAL-10**: User can run standalone hypothesis tests: t-tests, F-tests, chi-square, ANOVA
+
+### Results & Output
+
+- [ ] **RSLT-01**: System displays plain-English interpretation of results via Claude API
+- [ ] **RSLT-02**: System displays coefficient tables with standard errors, p-values, and confidence intervals
+- [ ] **RSLT-03**: System generates interactive Plotly charts (coefficient plots, residual plots, time series plots)
+- [ ] **RSLT-04**: User can view and copy the generated R code for each analysis
+- [ ] **RSLT-05**: System translates R errors into actionable plain-English feedback
+- [ ] **RSLT-06**: After analysis, Claude suggests related follow-up tests the user might want to run
+- [ ] **RSLT-07**: User can export results as PDF or Excel report
+
+### History & Persistence
+
+- [ ] **HIST-01**: User can view list of past analyses (prompts + results)
+- [ ] **HIST-02**: User can revisit and view full results of any past analysis
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Authentication
+
+- **AUTH-04**: User can reset password via email link
+- **AUTH-05**: OAuth login (Google, GitHub)
+
+### Sharing & Collaboration
+
+- **SHAR-01**: User can share analysis results via URL (read-only permalink)
+- **SHAR-02**: Team workspaces with shared analysis history
+
+### Advanced Analysis
+
+- **ADVN-01**: Bayesian analysis (MCMC, stan, brms)
+- **ADVN-02**: Custom R package installation by users
+
+### Platform
+
+- **PLAT-01**: API access for programmatic use
+- **PLAT-02**: Mobile-responsive design
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Real-time streaming data | Batch pulls sufficient for regression/econometric work; streaming adds WebSocket complexity and paid API tiers |
+| Team collaboration / multiplayer editing | Complex concurrent-edit logic; solo researcher focus for MVP |
+| User-installable R packages | Sandbox security risk, breaks reproducibility; curated environment instead |
+| Bayesian analysis | Long MCMC run times, harder to interpret automatically; frequentist covers 95% of needs |
+| API access | Must validate core UX before exposing as platform |
+| Custom dashboards / BI-style reports | Turns product into BI tool competing with Tableau; not the core value |
+| AI-generated paper drafts / LaTeX export | Separate product category; poorly done erodes trust in core analysis |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| AUTH-01 | — | Pending |
+| AUTH-02 | — | Pending |
+| AUTH-03 | — | Pending |
+| DATA-01 | — | Pending |
+| DATA-02 | — | Pending |
+| DATA-03 | — | Pending |
+| DATA-04 | — | Pending |
+| DATA-05 | — | Pending |
+| DATA-06 | — | Pending |
+| DATA-07 | — | Pending |
+| DATA-08 | — | Pending |
+| DATA-09 | — | Pending |
+| DATA-10 | — | Pending |
+| DATA-11 | — | Pending |
+| DATA-12 | — | Pending |
+| DATA-13 | — | Pending |
+| DATA-14 | — | Pending |
+| DATA-15 | — | Pending |
+| DATA-16 | — | Pending |
+| ANAL-01 | — | Pending |
+| ANAL-02 | — | Pending |
+| ANAL-03 | — | Pending |
+| ANAL-04 | — | Pending |
+| ANAL-05 | — | Pending |
+| ANAL-06 | — | Pending |
+| ANAL-07 | — | Pending |
+| ANAL-08 | — | Pending |
+| ANAL-09 | — | Pending |
+| ANAL-10 | — | Pending |
+| RSLT-01 | — | Pending |
+| RSLT-02 | — | Pending |
+| RSLT-03 | — | Pending |
+| RSLT-04 | — | Pending |
+| RSLT-05 | — | Pending |
+| RSLT-06 | — | Pending |
+| RSLT-07 | — | Pending |
+| HIST-01 | — | Pending |
+| HIST-02 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 38 total
+- Mapped to phases: 0
+- Unmapped: 38 ⚠️
+
+---
+*Requirements defined: 2026-03-23*
+*Last updated: 2026-03-23 after initial definition*
