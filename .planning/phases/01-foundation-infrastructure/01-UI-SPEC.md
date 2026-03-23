@@ -52,13 +52,13 @@ Exceptions: Touch targets for icon-only sidebar toggle buttons must be minimum 4
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px | 400 (regular) | 1.5 |
-| Label | 12px | 500 (medium) | 1.4 |
+| Label | 12px | 400 (regular) | 1.4 |
 | Heading | 20px | 600 (semibold) | 1.2 |
 | Display | 28px | 600 (semibold) | 1.15 |
 
 **Notes:**
 - Body (14px/400) is used for all form inputs, tab content, sidebar list items, and status card text.
-- Label (12px/500) is used for form field labels, sidebar section headings, and status step names.
+- Label (12px/400) is used for form field labels, sidebar section headings, and status step names. Size contrast alone (12px vs 14px) distinguishes labels from body text — no weight difference needed.
 - Heading (20px/600) is used for the auth card title ("Welcome back", "Create account") and the main workspace header.
 - Display (28px/600) is reserved for the app logo/wordmark in the sidebar header — used nowhere else in Phase 1.
 - Font stack: `font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`
@@ -69,12 +69,14 @@ Exceptions: Touch targets for icon-only sidebar toggle buttons must be minimum 4
 
 Dark theme. Source: D-07 (CONTEXT.md) — "dark theme with single accent color — modern data tool aesthetic (slate/gray background, light text)."
 
+**Focal point declaration:** Primary visual anchor on `/auth` is the centered auth card (slate-800 surface on slate-950 background, 480px max-width). Primary visual anchor in the workspace is the empty state heading "Ready when you are" (20px/600, horizontally and vertically centered in the workspace panel).
+
 | Role | Value | Usage |
 |------|-------|-------|
 | Dominant (60%) | `#0f172a` (slate-950) | Main background, workspace area, auth page background |
 | Secondary (30%) | `#1e293b` (slate-800) | Sidebar background, cards, auth card surface, input backgrounds |
 | Accent (10%) | `#6366f1` (indigo-500) | Listed below — reserved for specific elements only |
-| Destructive | `#ef4444` (red-500) | Cancel job button, error states only |
+| Destructive | `#ef4444` (red-500) | Cancel Job button, error states only |
 | Border | `#334155` (slate-700) | Card borders, input borders, dividers |
 | Text primary | `#f1f5f9` (slate-100) | Body text, headings |
 | Text muted | `#94a3b8` (slate-400) | Secondary labels, placeholder text, sidebar nav text (inactive) |
@@ -112,7 +114,7 @@ Phase 1 UI surface: auth page (login + register tabs), app shell (sidebar + empt
 | Job status — running R | Running analysis |
 | Job status — generating interpretation | Generating interpretation |
 | Job status — elapsed time label | Elapsed: {N}s |
-| Job status — cancel button | Cancel |
+| Job status — cancel button | Cancel Job |
 | Cancel confirmation (inline) | Are you sure? This will stop the running analysis. |
 | Cancel confirmation — confirm | Yes, cancel |
 | Cancel confirmation — dismiss | Keep running |
@@ -123,7 +125,7 @@ Phase 1 UI surface: auth page (login + register tabs), app shell (sidebar + empt
 | Generic API error | Something went wrong. Please try again in a moment. |
 
 **Destructive actions in Phase 1:**
-- Cancel job during execution — inline confirmation pattern (no modal, no separate page). Show confirmation text and two buttons in-place within the status card. Auto-dismiss after 10 seconds of inaction (keeps running).
+- Cancel Job during execution — inline confirmation pattern (no modal, no separate page). Show confirmation text and two buttons in-place within the status card. Auto-dismiss after 10 seconds of inaction (keeps running).
 
 ---
 
@@ -156,8 +158,8 @@ These are the specific state machines and interaction behaviors the executor mus
 - Four named steps shown as a stepped progress row: Queued → Fetching Data → Running Analysis → Generating Interpretation
 - Completed steps: filled accent dot. Current step: pulsing accent dot. Pending steps: muted dot
 - Elapsed time counter updates every second
-- Cancel button appears below the step row, right-aligned
-- Clicking Cancel shows inline confirmation (see copywriting above)
+- Cancel Job button appears below the step row, right-aligned
+- Clicking Cancel Job shows inline confirmation (see copywriting above)
 - On job complete: card transitions to result state (out of scope Phase 1 — card can show "Done" stub)
 - On job error: card shows destructive color, plain-English error message, and a "Try again" link
 
