@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers.auth import router as auth_router
+from app.routers.jobs import router as jobs_router
 
 
 @asynccontextmanager
@@ -22,6 +23,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(jobs_router, prefix="/jobs", tags=["jobs"])
 
 
 @app.get("/health")

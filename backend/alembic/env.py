@@ -24,6 +24,7 @@ if config.config_file_name is not None:
 # Import Base metadata for autogenerate support
 from app.database import Base  # noqa: E402
 from app.config import settings  # noqa: E402
+import app.models  # noqa: E402, F401 — ensures all models are registered with Base.metadata
 
 target_metadata = Base.metadata
 
