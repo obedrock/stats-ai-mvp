@@ -1,18 +1,40 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useAuthStore } from "./store/auth";
+import AuthPage from "./pages/AuthPage";
+import WorkspacePage from "./pages/WorkspacePage";
 
 const queryClient = new QueryClient();
 
-function App() {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const token = useAuthStore((s) => s.token);
+  return token ? <>{children}</> : <Navigate to="/auth" replace />;
+}
+
+function AuthRoute({ children }: { children: React.ReactNode }) {
+  const token = useAuthStore((s) => s.token);
+  return token ? <Navigate to="/" replace /> : <>{children}</>;
+}
+
+function AppInit({ children }: { children: React.ReactNode }) {
+  const initialize = useAuthStore((s) => s.initialize);
+  useEffect(() => { initialize(); }, [initialize]);
+  return <>{children}</>;
+}
+
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="*" element={<div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center"><p>Stats-AI is loading...</p></div>} />
-        </Routes>
+        <AppInit>
+          <Routes>
+            <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
+            <Route path="/" element={<ProtectedRoute><WorkspacePage /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AppInit>
       </BrowserRouter>
     </QueryClientProvider>
   );
 }
-
-export default App;

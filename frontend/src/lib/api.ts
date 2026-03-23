@@ -14,3 +14,15 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
   }
   return res.json();
 }
+
+export async function apiFormPost<T>(path: string, data: Record<string, string>): Promise<T> {
+  const token = localStorage.getItem("token");
+  const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+  const body = new URLSearchParams(data);
+  const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw { status: res.status, ...json };
+  }
+  return res.json();
+}
