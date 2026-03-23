@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
 # Install R packages at build time (no network at runtime)
 RUN Rscript -e "install.packages(c('ggplot2','plotly','lmtest','sandwich','plm','forecast','tseries','car','jsonlite'), repos='https://cran.rstudio.com/', Ncpus=2)"
 
+# Install security profile that disables system() and download.file()
+COPY Rprofile.site /etc/R/Rprofile.site
+
 # Create non-root user for R execution
 RUN useradd -m -u 1000 ruser
 USER ruser

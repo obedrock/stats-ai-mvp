@@ -1,0 +1,3 @@
+# Disable network and system access in the sandbox
+system <- function(...) stop("system() is disabled in this environment")
+download.file <- function(...) stop("download.file() is disabled in this environment")
