@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import shutil
 import signal
@@ -18,6 +19,8 @@ from app.models.job import Job
 from app.services.data_pipeline import clean_and_merge
 from app.services.r_code_gen import generate_ols_slots, render_ols_script
 from app.services.r_interpreter import explain_r_error, interpret_ols_results
+
+logger = logging.getLogger(__name__)
 
 _current_proc = None
 
@@ -186,38 +189,63 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             with open(script_path, "w") as f:
                 f.write(r_script)
 
+            # Debug logging for Docker volume mount diagnosis
+            csv_size = os.path.getsize(csv_path)
+            script_size = os.path.getsize(script_path)
+            logger.info(
+                "[run_ols_analysis] job=%s R_SANDBOX_TMPDIR=%s sandbox_base=%s tmpdir=%s "
+                "csv_path=%s csv_size=%d script_path=%s script_size=%d "
+                "csv_exists=%s script_exists=%s",
+                job_id,
+                os.environ.get("R_SANDBOX_TMPDIR", "<NOT SET>"),
+                sandbox_base,
+                tmpdir,
+                csv_path, csv_size,
+                script_path, script_size,
+                os.path.isfile(csv_path),
+                os.path.isfile(script_path),
+            )
+            logger.info(
+                "[run_ols_analysis] job=%s csv_head=%s",
+                job_id,
+                open(csv_path).readline().strip(),
+            )
+            logger.info(
+                "[run_ols_analysis] job=%s r_script_head=%s",
+                job_id,
+                r_script[:200],
+            )
+
+            docker_cmd = [
+                "docker", "run", "--rm",
+                "--network", "none",
+                "--memory", "512m",
+                "--cpus", "1.0",
+                "--read-only",
+                "--tmpfs", "/tmp:size=64m",
+                "--user", "1000",
+                "-v", f"{script_path}:/analysis.R:ro",
+                "-v", f"{csv_path}:/data/data.csv:ro",
+                "stats-ai-r-sandbox",
+                "Rscript", "/analysis.R",
+            ]
+            logger.info("[run_ols_analysis] job=%s docker_cmd=%s", job_id, " ".join(docker_cmd))
+
             self.update_state(state="PROGRESS", meta={"stage": "running_r", "job_id": job_id})
 
             try:
                 _current_proc = subprocess.Popen(
-                    [
-                        "docker",
-                        "run",
-                        "--rm",
-                        "--network",
-                        "none",
-                        "--memory",
-                        "512m",
-                        "--cpus",
-                        "1.0",
-                        "--read-only",
-                        "--tmpfs",
-                        "/tmp:size=64m",
-                        "--user",
-                        "1000",
-                        "-v",
-                        f"{script_path}:/analysis.R:ro",
-                        "-v",
-                        f"{csv_path}:/data/data.csv:ro",
-                        "stats-ai-r-sandbox",
-                        "Rscript",
-                        "/analysis.R",
-                    ],
+                    docker_cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                 )
                 stdout, stderr = _current_proc.communicate(timeout=60)
                 returncode = _current_proc.returncode
+                logger.info(
+                    "[run_ols_analysis] job=%s returncode=%d stdout_len=%d stderr_len=%d stderr_head=%s",
+                    job_id, returncode, len(stdout), len(stderr),
+                    stderr.decode("utf-8", errors="replace")[:500],
+                )
             except subprocess.TimeoutExpired:
                 _current_proc.kill()
                 _current_proc.communicate()
