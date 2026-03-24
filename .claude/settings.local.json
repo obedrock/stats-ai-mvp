@@ -4,7 +4,11 @@
       "Bash(node:*)",
       "WebSearch",
       "WebFetch(domain:pypi.org)",
-      "Bash(uv lock:*)"
+      "Bash(uv lock:*)",
+      "Bash(grep:*)",
+      "Bash(uv run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
