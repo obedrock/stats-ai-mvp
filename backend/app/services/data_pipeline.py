@@ -134,7 +134,12 @@ def clean_and_merge(
                     f"{series_id}: {count} outlier value(s) detected in '{col}' (not removed)"
                 )
 
-    # Step 5 — Merge
+    # Step 5 — Rename columns to series_id (all source DataFrames have a generic
+    # "value" column; without renaming, pd.concat produces duplicate column names
+    # and merged["value"] returns a DataFrame instead of a Series).
+    for series_id, df in list(cleaned.items()):
+        cleaned[series_id] = df.rename(columns={"value": series_id})
+
     if len(cleaned) == 1:
         merged = list(cleaned.values())[0].copy()
     else:
