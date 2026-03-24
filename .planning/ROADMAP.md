@@ -66,7 +66,7 @@ Plans:
 - [x] 02-07-PLAN.md — Frontend components: PromptInput, SourceChip, UploadDropzone, FrequencyMismatchDialog
 - [x] 02-08-PLAN.md — Frontend integration: WorkspacePage wiring, DataPreviewPanel, assumptions UI
 - [ ] 02-09-PLAN.md — Gap closure: fix FetchRequest schema, add date_range extraction, store on Job
-- [ ] 02-10-PLAN.md — Gap closure: fix FrequencyMismatchDialog blocking, pre-fetch assumptions for detailed mode
+- [x] 02-10-PLAN.md — Gap closure: fix FrequencyMismatchDialog blocking, pre-fetch assumptions for detailed mode
 
 **UI hint**: yes
 
@@ -124,7 +124,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 5/5 | Complete   | 2026-03-23 |
-| 2. Data Pipeline | 8/10 | Gap closure | - |
+| 2. Data Pipeline | 9/10 | In Progress|  |
 | 3. Core Analysis Engine | 0/TBD | Not started | - |
 | 4. Extended Analysis Types | 0/TBD | Not started | - |
 | 5. History & Persistence | 0/TBD | Not started | - |
