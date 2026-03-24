@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-07-PLAN.md
-last_updated: "2026-03-24T01:19:05.112Z"
+stopped_at: Completed 02-05-PLAN.md
+last_updated: "2026-03-24T01:31:03.525Z"
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 13
-  completed_plans: 9
+  completed_plans: 11
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 02 (data-pipeline) — EXECUTING
-Plan: 5 of 8
+Plan: 7 of 8
 
 ## Performance Metrics
 
@@ -55,6 +55,8 @@ Plan: 5 of 8
 | Phase 02-data-pipeline P03 | 2 | 2 tasks | 3 files |
 | Phase 02 P02 | 8 | 2 tasks | 22 files |
 | Phase 02-data-pipeline P07 | 20 | 2 tasks | 6 files |
+| Phase 02-data-pipeline P04 | 266 | 2 tasks | 11 files |
+| Phase 02-data-pipeline P05 | 401 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -84,6 +86,9 @@ Recent decisions affecting current work:
 - [Phase 02]: shadcn CLI base-nova style matches existing @base-ui/react component pattern from Phase 1
 - [Phase 02-data-pipeline]: ColumnMapping type defined in ColumnMappingTable.tsx (not data.ts) as component-local output contract
 - [Phase 02-data-pipeline]: base-ui Dialog blocking: disablePointerDismissal prop + onInteractOutside preventDefault for FrequencyMismatchDialog
+- [Phase 02-data-pipeline]: fakeredis TTL tested via patch(time.time) not FakeServer.time — server.time attribute does not exist in fakeredis 2.x
+- [Phase 02-data-pipeline]: Z-score fallback added to outlier detection when IQR=0 — handles constant-value baselines with extreme outliers
+- [Phase 02-data-pipeline]: pandas 3.x compatibility: infer_datetime_format removed; select_dtypes uses explicit string+object include list
 
 ### Pending Todos
 
@@ -97,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T01:19:05.105Z
-Stopped at: Completed 02-07-PLAN.md
+Last session: 2026-03-24T01:31:03.520Z
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None
