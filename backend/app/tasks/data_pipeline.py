@@ -65,11 +65,12 @@ def fetch_data(
                 },
             )
             df = pd.read_json(io.StringIO(cached))
-            # IMPORTANT: Restore UTC timezone on cached DataFrames before
-            # frequency conflict check. pd.read_json loses timezone info,
-            # and check_frequency_conflict requires consistent UTC indexes
-            # (clean_and_merge's timezone normalization happens later).
-            if df.index.tz is None:
+            # pd.read_json may return epoch-ms integers as index instead of
+            # DatetimeIndex. Convert explicitly to ensure downstream resample/
+            # infer_freq work correctly.
+            if not isinstance(df.index, pd.DatetimeIndex):
+                df.index = pd.to_datetime(df.index, unit="ms", utc=True)
+            elif df.index.tz is None:
                 df.index = df.index.tz_localize("UTC")
             dataframes[series_id] = df
             continue

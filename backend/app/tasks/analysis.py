@@ -152,9 +152,10 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             raw = redis_client.get(cache_key)
             if raw is None:
                 raise ValueError(f"Cache key {cache_key!r} not found in Redis — data may have expired")
-            df = pd.DataFrame(pd.read_json(io.StringIO(raw.decode("utf-8"))))
-            # Restore UTC timezone after JSON round-trip (same as fetch_data task)
-            if df.index.tz is None:
+            df = pd.read_json(io.StringIO(raw.decode("utf-8")))
+            if not isinstance(df.index, pd.DatetimeIndex):
+                df.index = pd.to_datetime(df.index, unit="ms", utc=True)
+            elif df.index.tz is None:
                 df.index = df.index.tz_localize("UTC")
             # Use series_id from cache key (format: source:series_id:start:end)
             series_id = cache_key.split(":")[1]
