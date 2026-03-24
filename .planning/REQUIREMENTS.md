@@ -15,22 +15,22 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Data Pipeline
 
-- [ ] **DATA-01**: System auto-detects data sources from prompt context (e.g. "GDP" → FRED, "AAPL price" → Yahoo Finance)
-- [ ] **DATA-02**: User can override auto-detected data source selection
-- [ ] **DATA-03**: System pulls data from FRED API based on detected series
-- [ ] **DATA-04**: System pulls data from Yahoo Finance API based on detected ticker/series
-- [ ] **DATA-05**: System handles missing values automatically (interpolation, forward-fill, or drop)
+- [x] **DATA-01**: System auto-detects data sources from prompt context (e.g. "GDP" → FRED, "AAPL price" → Yahoo Finance)
+- [x] **DATA-02**: User can override auto-detected data source selection
+- [x] **DATA-03**: System pulls data from FRED API based on detected series
+- [x] **DATA-04**: System pulls data from Yahoo Finance API based on detected ticker/series
+- [x] **DATA-05**: System handles missing values automatically (interpolation, forward-fill, or drop)
 - [ ] **DATA-06**: System aligns different date formats and time zones across sources
 - [ ] **DATA-07**: System normalizes units (billions vs millions, % vs decimal)
 - [ ] **DATA-08**: System flags or handles outliers automatically
-- [ ] **DATA-09**: System detects frequency mismatches (daily vs quarterly) and prompts user to choose resolution strategy
-- [ ] **DATA-10**: System displays assumptions (levels vs %, log transforms, lag structure) in quick mode — runs with smart defaults, explains in results
-- [ ] **DATA-11**: System displays assumptions in detailed mode — lists for user approval before execution
+- [x] **DATA-09**: System detects frequency mismatches (daily vs quarterly) and prompts user to choose resolution strategy
+- [x] **DATA-10**: System displays assumptions (levels vs %, log transforms, lag structure) in quick mode — runs with smart defaults, explains in results
+- [x] **DATA-11**: System displays assumptions in detailed mode — lists for user approval before execution
 - [ ] **DATA-12**: User can upload CSV, Excel, or JSON files
 - [ ] **DATA-13**: System auto-detects columns, types, and date formats from uploaded files
-- [ ] **DATA-14**: User can confirm or correct column mappings after auto-detection
-- [ ] **DATA-15**: Pulled datasets are cached per user for reuse across analyses
-- [ ] **DATA-16**: User can preview cleaned/merged dataset before running analysis
+- [x] **DATA-14**: User can confirm or correct column mappings after auto-detection
+- [x] **DATA-15**: Pulled datasets are cached per user for reuse across analyses
+- [x] **DATA-16**: User can preview cleaned/merged dataset before running analysis
 
 ### Analysis Engine
 
@@ -105,22 +105,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-01 | Phase 1 | Complete |
 | AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Complete |
-| DATA-01 | Phase 2 | Pending |
-| DATA-02 | Phase 2 | Pending |
-| DATA-03 | Phase 2 | Pending |
-| DATA-04 | Phase 2 | Pending |
-| DATA-05 | Phase 2 | Pending |
+| DATA-01 | Phase 2 | Complete |
+| DATA-02 | Phase 2 | Complete |
+| DATA-03 | Phase 2 | Complete |
+| DATA-04 | Phase 2 | Complete |
+| DATA-05 | Phase 2 | Complete |
 | DATA-06 | Phase 2 | Pending |
 | DATA-07 | Phase 2 | Pending |
 | DATA-08 | Phase 2 | Pending |
-| DATA-09 | Phase 2 | Pending |
-| DATA-10 | Phase 2 | Pending |
-| DATA-11 | Phase 2 | Pending |
+| DATA-09 | Phase 2 | Complete |
+| DATA-10 | Phase 2 | Complete |
+| DATA-11 | Phase 2 | Complete |
 | DATA-12 | Phase 2 | Pending |
 | DATA-13 | Phase 2 | Pending |
-| DATA-14 | Phase 2 | Pending |
-| DATA-15 | Phase 2 | Pending |
-| DATA-16 | Phase 2 | Pending |
+| DATA-14 | Phase 2 | Complete |
+| DATA-15 | Phase 2 | Complete |
+| DATA-16 | Phase 2 | Complete |
 | ANAL-01 | Phase 3 | Pending |
 | ANAL-02 | Phase 4 | Pending |
 | ANAL-03 | Phase 4 | Pending |

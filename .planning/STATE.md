@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-03-23T23:48:49.801Z"
+stopped_at: Completed 02-03-PLAN.md — type contracts defined
+last_updated: "2026-03-24T01:06:43.544Z"
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 13
+  completed_plans: 6
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The data acquisition and preparation pipeline must work reliably — automatically pulling, cleaning, merging, and transforming data from multiple sources so users never touch raw data.
-**Current focus:** Phase 01 — foundation-infrastructure
+**Current focus:** Phase 02 — data-pipeline
 
 ## Current Position
 
-Phase: 01 (foundation-infrastructure) — EXECUTING
-Plan: 2 of 5
+Phase: 02 (data-pipeline) — EXECUTING
+Plan: 3 of 8
 
 ## Performance Metrics
 
@@ -51,6 +51,8 @@ Plan: 2 of 5
 | Phase 01 P03 | 45 | 3 tasks | 13 files |
 | Phase 01 P04 | 25 | 2 tasks | 8 files |
 | Phase 01 P05 | 2 | 1 tasks | 6 files |
+| Phase 02-data-pipeline P01 | 2 | 1 tasks | 4 files |
+| Phase 02-data-pipeline P03 | 2 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -72,6 +74,10 @@ Recent decisions affecting current work:
 - [Phase 01]: nginx proxies /api/* to backend:8000/ — frontend VITE_API_URL=/api at build time
 - [Phase 01]: certbot standalone mode for initial SSL cert provisioning on Digital Ocean droplet
 - [Phase 01]: celery-worker mounts /var/run/docker.sock to spawn R sandbox containers at runtime
+- [Phase 02-data-pipeline]: JSON blobs stored as Text in Job model (data_sources, assumptions, cached_data_keys) — avoids JSONB dependency for SQLite test compatibility
+- [Phase 02-data-pipeline]: Manual Alembic migration for Phase 2 data pipeline columns — PostgreSQL not running locally, consistent with Phase 1 precedent
+- [Phase 02-data-pipeline]: SourceOverride.source field added to enable validation routing: FRED calls validate_series(), YAHOO does basic non-empty check
+- [Phase 02-data-pipeline]: Zustand analysis store persists only mode preference to localStorage — all other pipeline state is ephemeral
 
 ### Pending Todos
 
@@ -85,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T23:48:49.796Z
-Stopped at: Phase 2 UI-SPEC approved
-Resume file: .planning/phases/02-data-pipeline/02-UI-SPEC.md
+Last session: 2026-03-24T01:06:43.538Z
+Stopped at: Completed 02-03-PLAN.md — type contracts defined
+Resume file: None
