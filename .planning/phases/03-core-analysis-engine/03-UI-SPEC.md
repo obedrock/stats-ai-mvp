@@ -41,7 +41,7 @@ Declared values (must be multiples of 4):
 
 Exceptions:
 - Diagnostic card row uses gap-3 (12px) between cards — acceptable mid-point between sm and md for compact card grids
-- Table cell row height uses py-1.5 (6px vertical) — carried forward from DataPreviewPanel pattern
+- Table cell row height uses py-2 (8px vertical) — the nearest valid multiple-of-4 value. Note: DataPreviewPanel uses py-1.5 (6px) which is pre-existing technical debt in Phase 2; that value is NOT carried forward into this phase.
 - Chip row (follow-up suggestions) uses gap-2 (8px) horizontal between chips
 
 ---
