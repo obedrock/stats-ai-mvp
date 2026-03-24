@@ -8,8 +8,12 @@ DATA-09: Detect and return frequency conflicts to the frontend.
 """
 import io
 import json
+import logging
+import traceback
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 from .celery_app import celery_app
 from app.services.data_cache import get_cached, set_cached
@@ -96,15 +100,31 @@ def fetch_data(
         set_cached(cache_key, df.to_json(), ttl)
         dataframes[series_id] = df
 
+    # Debug: log DataFrame state before conflict check
+    for sid, dframe in dataframes.items():
+        logger.info(
+            "[fetch_data] job=%s series=%s index_type=%s dtype=%s shape=%s head_index=%s",
+            job_id, sid, type(dframe.index).__name__,
+            dframe.dtypes.to_dict(), dframe.shape,
+            list(dframe.index[:3]),
+        )
+
     # Check frequency conflict (DATA-09)
     if len(dataframes) > 1:
         conflict = check_frequency_conflict(dataframes)
         if conflict["has_conflict"] and resolution:
             # Apply user-confirmed resolution
             for series_id, df in list(dataframes.items()):
-                dataframes[series_id] = apply_resolution(
-                    df, resolution["target_frequency"], resolution["method"]
-                )
+                try:
+                    dataframes[series_id] = apply_resolution(
+                        df, resolution["target_frequency"], resolution["method"]
+                    )
+                except Exception:
+                    logger.error(
+                        "[fetch_data] apply_resolution FAILED for %s:\n%s",
+                        series_id, traceback.format_exc(),
+                    )
+                    raise
         elif conflict["has_conflict"] and not resolution:
             # Return conflict to frontend -- task pauses here
             return {
@@ -123,7 +143,11 @@ def fetch_data(
             "sub_status": "Cleaning and merging data...",
         },
     )
-    result = clean_and_merge(dataframes, mode=mode)
+    try:
+        result = clean_and_merge(dataframes, mode=mode)
+    except Exception:
+        logger.error("[fetch_data] clean_and_merge FAILED:\n%s", traceback.format_exc())
+        raise
 
     return {
         "status": "data_ready",
