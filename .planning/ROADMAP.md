@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Infrastructure** - Project scaffolding, auth, async job queue, and sandboxed R execution environment (completed 2026-03-23)
 - [x] **Phase 2: Data Pipeline** - Auto-pull from FRED and Yahoo Finance, data cleaning, frequency mismatch handling, user uploads, caching, and data preview (gap closure in progress) (completed 2026-03-24)
-- [ ] **Phase 3: Core Analysis Engine** - OLS regression with full diagnostics, Claude-powered code generation and interpretation, result display, and error feedback
+- [x] **Phase 3: Core Analysis Engine** - OLS regression with full diagnostics, Claude-powered code generation and interpretation, result display, and error feedback (completed 2026-03-24)
 - [ ] **Phase 4: Extended Analysis Types** - Logistic, panel, and time-series regression; model comparison
 - [ ] **Phase 5: History & Persistence** - Analysis history list and full result revisitation
 - [ ] **Phase 6: Export & Polish** - PDF/Excel report export and UX refinements
@@ -89,7 +89,7 @@ Plans:
 - [x] 03-02-PLAN.md — Claude API services (Stage 1 code gen + Stage 2 interpretation)
 - [x] 03-03-PLAN.md — Backend pipeline: Celery task, analysis router, API endpoints
 - [x] 03-04-PLAN.md — Frontend result components (9 components + react-plotly.js)
-- [ ] 03-05-PLAN.md — Frontend integration: WorkspacePage wiring, store, polling
+- [x] 03-05-PLAN.md — Frontend integration: WorkspacePage wiring, store, polling
 
 **UI hint**: yes
 
@@ -134,7 +134,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 5/5 | Complete   | 2026-03-23 |
 | 2. Data Pipeline | 10/10 | Complete   | 2026-03-24 |
-| 3. Core Analysis Engine | 5/6 | In Progress|  |
+| 3. Core Analysis Engine | 6/6 | Complete   | 2026-03-24 |
 | 4. Extended Analysis Types | 0/TBD | Not started | - |
 | 5. History & Persistence | 0/TBD | Not started | - |
 | 6. Export & Polish | 0/TBD | Not started | - |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-03-24T15:26:01.898Z"
+stopped_at: "Checkpoint: human-verify task 3 in 03-05-PLAN.md"
+last_updated: "2026-03-24T15:33:58.913Z"
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 21
-  completed_plans: 20
+  completed_plans: 21
 ---
 
 # Project State
@@ -64,6 +64,7 @@ Plan: 6 of 6
 | Phase 03 P02 | 15 | 2 tasks | 5 files |
 | Phase 03 P04 | 5 | 2 tasks | 10 files |
 | Phase 03 P03 | 15 | 2 tasks | 3 files |
+| Phase 03 P05 | 8 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,8 @@ Recent decisions affecting current work:
 - [Phase 03]: react-plotly.js factory pattern used with ts-expect-error suppression; plotly.js-dist-min has no TypeScript declarations so Plot component typed manually as React.ComponentType
 - [Phase 03]: Sync SQLAlchemy engine (create_engine + Session) used in Celery worker — async engine incompatible with sync Celery context
 - [Phase 03]: Plotly chart JSON parsed in both Celery task and GET router for robustness — handles both pre-parsed dict and raw JSON string formats
+- [Phase 03]: Atomic transitions in setAnalysisComplete/setAnalysisError set stage and result in single Zustand set() call to prevent flash-of-empty-state
+- [Phase 03]: Follow-up chip selection resets to idle (not analysis_complete) per D-14 — user reviews/edits prompt before resubmitting
 
 ### Pending Todos
 
@@ -123,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T15:26:01.894Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-03-24T15:33:58.909Z
+Stopped at: Checkpoint: human-verify task 3 in 03-05-PLAN.md
 Resume file: None
