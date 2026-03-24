@@ -1,13 +1,16 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error -- react-plotly.js has no bundled type declarations; Plotly types from chartData are unknown[]
-import createPlotlyComponent from "react-plotly.js/factory";
+// @ts-expect-error -- react-plotly.js has no bundled type declarations
+import * as plotlyFactory from "react-plotly.js/factory";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error -- plotly.js-dist-min has no bundled type declarations
-import Plotly from "plotly.js-dist-min";
+import * as Plotly from "plotly.js-dist-min";
 import type { ChartData } from "@/types/analysis";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-call
-const Plot = createPlotlyComponent(Plotly) as React.ComponentType<{
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
+const createPlotlyComponent = (plotlyFactory as any).default || plotlyFactory;
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
+const PlotlyLib = (Plotly as any).default || Plotly;
+const Plot = createPlotlyComponent(PlotlyLib) as React.ComponentType<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
