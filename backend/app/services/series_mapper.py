@@ -27,9 +27,24 @@ DETECT_TOOL = {
                     },
                     "required": ["source", "series_id", "display_name", "rationale"],
                 },
-            }
+            },
+            "date_range": {
+                "type": "object",
+                "properties": {
+                    "start": {
+                        "type": "string",
+                        "description": "Start date in YYYY-MM-DD format. Use first day of the year if only year given.",
+                    },
+                    "end": {
+                        "type": "string",
+                        "description": "End date in YYYY-MM-DD format. Use last day of the year if only year given.",
+                    },
+                },
+                "required": ["start", "end"],
+                "description": "Date range extracted from the user's prompt. If not specified, use 20 years back from today.",
+            },
         },
-        "required": ["sources"],
+        "required": ["sources", "date_range"],
     },
 }
 
@@ -50,16 +65,19 @@ def get_client() -> anthropic.Anthropic:
     return _client
 
 
-def map_prompt_to_sources(prompt: str) -> list[dict]:
-    """Map a natural language prompt to a list of data source descriptors.
+def map_prompt_to_sources(prompt: str) -> dict:
+    """Map a natural language prompt to data source descriptors and date range.
 
-    Uses Claude tool-use to extract structured source + series_id pairs.
+    Uses Claude tool-use to extract structured source + series_id pairs and
+    the date range specified in the prompt.
 
     Args:
         prompt: Natural language analysis request from the user.
 
     Returns:
-        List of dicts with keys: source, series_id, display_name, rationale.
+        Dict with keys:
+            - sources: list of dicts with keys source, series_id, display_name, rationale.
+            - date_range: dict with keys start and end (YYYY-MM-DD strings), or None.
 
     Raises:
         ValueError: If the Claude API call fails or returns unexpected content.
@@ -75,7 +93,10 @@ def map_prompt_to_sources(prompt: str) -> list[dict]:
             messages=[{"role": "user", "content": prompt}],
         )
         tool_use = next(b for b in response.content if b.type == "tool_use")
-        return tool_use.input["sources"]
+        return {
+            "sources": tool_use.input["sources"],
+            "date_range": tool_use.input.get("date_range"),
+        }
     except StopIteration:
         raise ValueError("Claude response did not contain a tool_use block.")
     except Exception as exc:

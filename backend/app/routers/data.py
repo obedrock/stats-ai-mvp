@@ -13,6 +13,7 @@ DATA-16: Data preview endpoint.
 """
 import asyncio
 import json
+from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -58,11 +59,14 @@ async def parse_prompt(
     """
     loop = asyncio.get_event_loop()
     try:
-        raw_sources = await loop.run_in_executor(
+        parsed_result = await loop.run_in_executor(
             None, map_prompt_to_sources, payload.prompt
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+
+    raw_sources = parsed_result["sources"]
+    date_range_obj = parsed_result.get("date_range")
 
     parsed: list[ParsedSource] = []
     for src in raw_sources:
@@ -84,7 +88,7 @@ async def parse_prompt(
             )
         )
 
-    return PromptParseResponse(sources=parsed)
+    return PromptParseResponse(sources=parsed, date_range=date_range_obj)
 
 
 @router.post("/parse-prompt/override", response_model=ParsedSource)
@@ -164,12 +168,22 @@ async def fetch_data_endpoint(
     Creates a Job record in the DB, enqueues the task with all source/range/mode
     parameters, and returns the job ID for polling.
     """
+    # Use provided date_range or default to last 20 years
+    date_range = payload.date_range
+    if date_range is None:
+        today = date.today()
+        date_range = {
+            "start": str(today.replace(year=today.year - 20)),
+            "end": str(today),
+        }
+
     job = Job(
         user_id=current_user.id,
         prompt=None,  # Prompt stored at analysis submit time
         data_sources=json.dumps(
             [s.model_dump() for s in payload.sources]
         ),
+        date_range=json.dumps(date_range),
         analysis_mode=payload.mode,
         status="queued",
         stage="queued",
@@ -183,7 +197,7 @@ async def fetch_data_endpoint(
     task = fetch_data.delay(
         job_id=str(job.id),
         sources=[s.model_dump() for s in payload.sources],
-        date_range=payload.date_range,
+        date_range=date_range,
         mode=payload.mode,
         resolution=payload.resolution.model_dump() if payload.resolution else None,
     )
@@ -219,10 +233,14 @@ async def resolve_frequency(
 
     sources = json.loads(original_job.data_sources) if original_job.data_sources else []
 
+    # Use stored date_range from the original job
+    date_range = json.loads(original_job.date_range) if original_job.date_range else {"start": "2000-01-01", "end": "2023-12-31"}
+
     # Re-enqueue fetch with resolution
     new_job = Job(
         user_id=current_user.id,
         data_sources=original_job.data_sources,
+        date_range=original_job.date_range,  # Carry forward stored date_range
         analysis_mode=original_job.analysis_mode,
         resolution_method=resolution.method,
         status="queued",
@@ -231,21 +249,6 @@ async def resolve_frequency(
     db.add(new_job)
     await db.commit()
     await db.refresh(new_job)
-
-    # We need the original date_range — stored in the Celery task result
-    # For now fetch from the task result; fall back to a 5-year window
-    original_task_result = None
-    if original_job.celery_task_id:
-        task_result = celery_app.AsyncResult(original_job.celery_task_id)
-        if task_result.state == "SUCCESS":
-            original_task_result = task_result.result
-
-    # Extract date_range from the cached conflict result if available
-    date_range = {"start": "2000-01-01", "end": "2023-12-31"}  # Fallback default
-    if original_task_result and "conflict" in original_task_result:
-        # Conflict result doesn't include date_range; we need another approach.
-        # Use the Job's data_sources to infer — for now use default.
-        pass
 
     task = fetch_data.delay(
         job_id=str(new_job.id),

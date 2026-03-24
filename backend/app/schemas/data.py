@@ -127,9 +127,8 @@ class AssumptionsConfirm(BaseModel):
 
 class FetchRequest(BaseModel):
     """Request to start data fetching after source confirmation."""
-    job_id: str
     sources: list[ParsedSource]
-    date_range: dict  # {start: str, end: str}
+    date_range: Optional[dict] = None  # {start: str, end: str} — defaults to last 20 years if None
     mode: str = Field(default="quick", pattern="^(quick|detailed)$")
     resolution: Optional[ResolutionChoice] = None  # If frequency conflict was resolved
     assumptions: Optional[list[AssumptionItem]] = None  # If detailed mode confirmed

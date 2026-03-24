@@ -26,6 +26,7 @@ class Job(Base):
     # Phase 2: Data pipeline columns
     prompt: Mapped[str] = mapped_column(Text, nullable=True)
     data_sources: Mapped[str] = mapped_column(Text, nullable=True)  # JSON array of {source, series_id, display_name}
+    date_range: Mapped[str] = mapped_column(Text, nullable=True)  # JSON: {start: str, end: str}
     resolution_method: Mapped[str] = mapped_column(String(50), nullable=True)  # e.g., "mean", "last", "sum", "ffill"
     analysis_mode: Mapped[str] = mapped_column(String(20), nullable=True)  # "quick" or "detailed"
     assumptions: Mapped[str] = mapped_column(Text, nullable=True)  # JSON array of assumption strings
