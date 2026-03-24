@@ -1,23 +1,96 @@
-"""
-Test stubs for series mapper (DATA-01).
-
-DATA-01: Auto-detect data source from natural language prompt.
-Implementation target: Plan 03 (series mapper + FRED fetcher).
-"""
+"""Tests for series_mapper.py — Claude tool-use for prompt → series ID mapping."""
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from app.services import series_mapper
+
+
+def _make_tool_use_response(sources: list[dict]) -> MagicMock:
+    """Build a mock Anthropic response with a tool_use content block."""
+    tool_use_block = MagicMock()
+    tool_use_block.type = "tool_use"
+    tool_use_block.input = {"sources": sources}
+
+    response = MagicMock()
+    response.content = [tool_use_block]
+    return response
+
 
 def test_map_prompt_detects_fred_source():
-    """Prompt mentioning GDP should map to FRED source."""
-    pytest.skip("Wave 0 stub -- implementation in Plan 03")
+    """'GDP growth since 2000' should return a FRED source for GDPC1."""
+    mock_sources = [
+        {
+            "source": "FRED",
+            "series_id": "GDPC1",
+            "display_name": "Real GDP",
+            "rationale": "Real GDP measures economic growth.",
+        }
+    ]
+    mock_response = _make_tool_use_response(mock_sources)
+
+    with patch("app.services.series_mapper.get_client") as mock_get_client:
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = mock_response
+        mock_get_client.return_value = mock_client
+
+        result = series_mapper.map_prompt_to_sources("GDP growth since 2000")
+
+    assert len(result) == 1
+    assert result[0]["source"] == "FRED"
+    assert result[0]["series_id"] == "GDPC1"
 
 
 def test_map_prompt_detects_yahoo_source():
-    """Prompt mentioning AAPL stock price should map to Yahoo Finance."""
-    pytest.skip("Wave 0 stub -- implementation in Plan 03")
+    """'AAPL price since 2020' should return a YAHOO source for AAPL."""
+    mock_sources = [
+        {
+            "source": "YAHOO",
+            "series_id": "AAPL",
+            "display_name": "Apple Inc.",
+            "rationale": "AAPL is the Yahoo Finance ticker for Apple.",
+        }
+    ]
+    mock_response = _make_tool_use_response(mock_sources)
+
+    with patch("app.services.series_mapper.get_client") as mock_get_client:
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = mock_response
+        mock_get_client.return_value = mock_client
+
+        result = series_mapper.map_prompt_to_sources("AAPL price since 2020")
+
+    assert len(result) == 1
+    assert result[0]["source"] == "YAHOO"
+    assert result[0]["series_id"] == "AAPL"
 
 
 def test_map_prompt_multi_source():
-    """Prompt with both macro data and stock price should detect both sources."""
-    pytest.skip("Wave 0 stub -- implementation in Plan 03")
+    """'AAPL vs GDP since 2010' should return 2 sources (one FRED, one YAHOO)."""
+    mock_sources = [
+        {
+            "source": "YAHOO",
+            "series_id": "AAPL",
+            "display_name": "Apple Inc.",
+            "rationale": "AAPL is the Yahoo Finance ticker for Apple.",
+        },
+        {
+            "source": "FRED",
+            "series_id": "GDPC1",
+            "display_name": "Real GDP",
+            "rationale": "Real GDP measures economic growth.",
+        },
+    ]
+    mock_response = _make_tool_use_response(mock_sources)
+
+    with patch("app.services.series_mapper.get_client") as mock_get_client:
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = mock_response
+        mock_get_client.return_value = mock_client
+
+        result = series_mapper.map_prompt_to_sources("AAPL vs GDP since 2010")
+
+    assert len(result) == 2
+    sources_set = {r["source"] for r in result}
+    assert "FRED" in sources_set
+    assert "YAHOO" in sources_set
