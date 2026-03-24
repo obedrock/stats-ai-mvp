@@ -63,13 +63,7 @@ export function FrequencyMismatchDialog({
   return (
     <Dialog
       open={true}
-      // Prevent closing when open state changes from outside clicks or escape
-      onOpenChange={(open, details) => {
-        if (!open && details) {
-          // Block outside press and escape key dismissal
-          details.preventUnmountOnClose?.();
-        }
-      }}
+      dismissible={false}
     >
       <DialogContent
         showCloseButton={false}
