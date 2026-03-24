@@ -121,6 +121,9 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             elif df.index.tz is None:
                 df.index = df.index.tz_localize("UTC")
             series_id = cache_key.split(":")[1]
+            # Rename generic "value" column to series_id so merged DataFrame
+            # has meaningful column names (GDPC1, DFF, etc.) for R formulas
+            df = df.rename(columns={"value": series_id})
             dataframes[series_id] = df
 
         result = clean_and_merge(dataframes)
@@ -128,6 +131,7 @@ def run_ols_analysis(self, job_id: str, prompt: str):
 
         # Step 4: Get column names
         column_names = list(df.columns)
+        logger.info("[run_ols_analysis] job=%s columns=%s shape=%s", job_id, column_names, df.shape)
 
         # Step 5: Call Stage 1 Claude
         self.update_state(state="PROGRESS", meta={"stage": "generating_code", "job_id": job_id})
