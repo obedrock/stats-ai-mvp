@@ -34,25 +34,25 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Analysis Engine
 
-- [ ] **ANAL-01**: User can run OLS regression via natural language prompt
+- [x] **ANAL-01**: User can run OLS regression via natural language prompt
 - [ ] **ANAL-02**: User can run logistic regression via natural language prompt
 - [ ] **ANAL-03**: User can run panel data regression (fixed/random effects) via natural language prompt
 - [ ] **ANAL-04**: User can run time series analysis (ARIMA, VAR) via natural language prompt
-- [ ] **ANAL-05**: System automatically runs diagnostic tests: heteroskedasticity (Breusch-Pagan)
-- [ ] **ANAL-06**: System automatically runs diagnostic tests: autocorrelation (Durbin-Watson)
-- [ ] **ANAL-07**: System automatically runs diagnostic tests: multicollinearity (VIF)
-- [ ] **ANAL-08**: System automatically runs diagnostic tests: normality (Shapiro-Wilk)
+- [x] **ANAL-05**: System automatically runs diagnostic tests: heteroskedasticity (Breusch-Pagan)
+- [x] **ANAL-06**: System automatically runs diagnostic tests: autocorrelation (Durbin-Watson)
+- [x] **ANAL-07**: System automatically runs diagnostic tests: multicollinearity (VIF)
+- [x] **ANAL-08**: System automatically runs diagnostic tests: normality (Shapiro-Wilk)
 - [ ] **ANAL-09**: User can compare models within a session (AIC/BIC, F-tests, pseudo-R2)
 - [ ] **ANAL-10**: User can run standalone hypothesis tests: t-tests, F-tests, chi-square, ANOVA
 
 ### Results & Output
 
-- [ ] **RSLT-01**: System displays plain-English interpretation of results via Claude API
-- [ ] **RSLT-02**: System displays coefficient tables with standard errors, p-values, and confidence intervals
-- [ ] **RSLT-03**: System generates interactive Plotly charts (coefficient plots, residual plots, time series plots)
-- [ ] **RSLT-04**: User can view and copy the generated R code for each analysis
-- [ ] **RSLT-05**: System translates R errors into actionable plain-English feedback
-- [ ] **RSLT-06**: After analysis, Claude suggests related follow-up tests the user might want to run
+- [x] **RSLT-01**: System displays plain-English interpretation of results via Claude API
+- [x] **RSLT-02**: System displays coefficient tables with standard errors, p-values, and confidence intervals
+- [x] **RSLT-03**: System generates interactive Plotly charts (coefficient plots, residual plots, time series plots)
+- [x] **RSLT-04**: User can view and copy the generated R code for each analysis
+- [x] **RSLT-05**: System translates R errors into actionable plain-English feedback
+- [x] **RSLT-06**: After analysis, Claude suggests related follow-up tests the user might want to run
 - [ ] **RSLT-07**: User can export results as PDF or Excel report
 
 ### History & Persistence
@@ -121,22 +121,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-14 | Phase 2 | Complete |
 | DATA-15 | Phase 2 | Complete |
 | DATA-16 | Phase 2 | Complete |
-| ANAL-01 | Phase 3 | Pending |
+| ANAL-01 | Phase 3 | Complete |
 | ANAL-02 | Phase 4 | Pending |
 | ANAL-03 | Phase 4 | Pending |
 | ANAL-04 | Phase 4 | Pending |
-| ANAL-05 | Phase 3 | Pending |
-| ANAL-06 | Phase 3 | Pending |
-| ANAL-07 | Phase 3 | Pending |
-| ANAL-08 | Phase 3 | Pending |
+| ANAL-05 | Phase 3 | Complete |
+| ANAL-06 | Phase 3 | Complete |
+| ANAL-07 | Phase 3 | Complete |
+| ANAL-08 | Phase 3 | Complete |
 | ANAL-09 | Phase 4 | Pending |
 | ANAL-10 | Phase 4 | Pending |
-| RSLT-01 | Phase 3 | Pending |
-| RSLT-02 | Phase 3 | Pending |
-| RSLT-03 | Phase 3 | Pending |
-| RSLT-04 | Phase 3 | Pending |
-| RSLT-05 | Phase 3 | Pending |
-| RSLT-06 | Phase 3 | Pending |
+| RSLT-01 | Phase 3 | Complete |
+| RSLT-02 | Phase 3 | Complete |
+| RSLT-03 | Phase 3 | Complete |
+| RSLT-04 | Phase 3 | Complete |
+| RSLT-05 | Phase 3 | Complete |
+| RSLT-06 | Phase 3 | Complete |
 | RSLT-07 | Phase 6 | Pending |
 | HIST-01 | Phase 5 | Pending |
 | HIST-02 | Phase 5 | Pending |

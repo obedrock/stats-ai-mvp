@@ -184,8 +184,17 @@ export default function WorkspacePage() {
         const prefetchAssumptions = buildPrefetchAssumptions(response.sources);
         setAssumptions(prefetchAssumptions);
       }
-    } catch {
-      setError("Could not parse your prompt. Please try again.");
+    } catch (err: unknown) {
+      console.error("parse-prompt failed:", err);
+      let message = "Could not parse your prompt. Please try again.";
+      if (err instanceof TypeError) {
+        message = `Cannot reach backend: ${err.message}`;
+      } else if (err && typeof err === "object" && "detail" in err) {
+        message = String((err as { detail: unknown }).detail);
+      } else if (err && typeof err === "object" && "status" in err) {
+        message = `Request failed (${(err as { status: number }).status}). Check the console for details.`;
+      }
+      setError(message);
       setPipelineStage("idle");
     }
   }
