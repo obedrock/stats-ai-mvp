@@ -311,6 +311,12 @@ async def get_preview(
             )
 
         if task_status == "data_ready":
+            # Persist cache keys on the Job so run_ols_analysis can reconstruct the DataFrame
+            job.cached_data_keys = json.dumps(data["cache_keys"])
+            job.status = "data_ready"
+            job.stage = "data_ready"
+            await db.commit()
+
             return DataPreview(
                 rows=data["preview_rows"],
                 total_rows=data["total_rows"],
