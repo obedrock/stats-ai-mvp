@@ -88,7 +88,7 @@ Plans:
 - [x] 03-01-PLAN.md — Type contracts, R template, Job model migration
 - [x] 03-02-PLAN.md — Claude API services (Stage 1 code gen + Stage 2 interpretation)
 - [ ] 03-03-PLAN.md — Backend pipeline: Celery task, analysis router, API endpoints
-- [ ] 03-04-PLAN.md — Frontend result components (9 components + react-plotly.js)
+- [x] 03-04-PLAN.md — Frontend result components (9 components + react-plotly.js)
 - [ ] 03-05-PLAN.md — Frontend integration: WorkspacePage wiring, store, polling
 
 **UI hint**: yes
@@ -134,7 +134,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 5/5 | Complete   | 2026-03-23 |
 | 2. Data Pipeline | 10/10 | Complete   | 2026-03-24 |
-| 3. Core Analysis Engine | 3/6 | In Progress|  |
+| 3. Core Analysis Engine | 4/6 | In Progress|  |
 | 4. Extended Analysis Types | 0/TBD | Not started | - |
 | 5. History & Persistence | 0/TBD | Not started | - |
 | 6. Export & Polish | 0/TBD | Not started | - |
