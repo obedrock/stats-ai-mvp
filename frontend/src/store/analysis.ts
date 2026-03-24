@@ -9,6 +9,7 @@ import type {
   AssumptionItem,
   AnalysisMode,
 } from "@/types/data";
+import type { AnalysisResult, AnalysisError } from "@/types/analysis";
 
 interface AnalysisState {
   // Prompt
@@ -49,8 +50,18 @@ interface AnalysisState {
   setJobId: (id: string | null) => void;
 
   // Pipeline stage for UI
-  pipelineStage: "idle" | "parsing" | "confirming_sources" | "fetching" | "frequency_conflict" | "confirming_assumptions" | "preview_ready";
+  pipelineStage: "idle" | "parsing" | "confirming_sources" | "fetching" | "frequency_conflict" | "confirming_assumptions" | "preview_ready" | "running_analysis" | "analysis_complete" | "analysis_error";
   setPipelineStage: (s: AnalysisState["pipelineStage"]) => void;
+
+  // Analysis execution
+  analysisJobId: string | null;
+  analysisResult: AnalysisResult | null;
+  analysisError: AnalysisError | null;
+
+  // Analysis actions
+  setAnalysisJobId: (id: string | null) => void;
+  setAnalysisComplete: (result: AnalysisResult) => void;
+  setAnalysisError: (error: AnalysisError) => void;
 
   // Reset
   reset: () => void;
@@ -66,6 +77,9 @@ const initialState = {
   assumptions: [] as AssumptionItem[],
   jobId: null as string | null,
   pipelineStage: "idle" as const,
+  analysisJobId: null as string | null,
+  analysisResult: null as AnalysisResult | null,
+  analysisError: null as AnalysisError | null,
 };
 
 export const useAnalysisStore = create<AnalysisState>()(
@@ -100,7 +114,24 @@ export const useAnalysisStore = create<AnalysisState>()(
         })),
       setJobId: (jobId) => set({ jobId }),
       setPipelineStage: (pipelineStage) => set({ pipelineStage }),
-      reset: () => set(initialState),
+      setAnalysisJobId: (analysisJobId) => set({ analysisJobId }),
+      // CRITICAL: Atomic transition — set stage and result in ONE set() call to prevent flash-of-empty-state
+      setAnalysisComplete: (result) => set({
+        analysisResult: result,
+        analysisError: null,
+        pipelineStage: "analysis_complete",
+      }),
+      setAnalysisError: (error) => set({
+        analysisError: error,
+        analysisResult: null,
+        pipelineStage: "analysis_error",
+      }),
+      reset: () => set({
+        ...initialState,
+        analysisJobId: null,
+        analysisResult: null,
+        analysisError: null,
+      }),
     }),
     {
       name: "stats-ai:analysis-mode",
