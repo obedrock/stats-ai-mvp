@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -41,7 +42,10 @@ def run_r_analysis(self, r_script: str, job_id: str):
     global _current_proc
     self.update_state(state="PROGRESS", meta={"stage": "queued", "job_id": job_id})
 
-    with tempfile.TemporaryDirectory() as tmpdir:
+    sandbox_base = os.environ.get("R_SANDBOX_TMPDIR", tempfile.gettempdir())
+    tmpdir = os.path.join(sandbox_base, f"job-{job_id}")
+    os.makedirs(tmpdir, exist_ok=True)
+    try:
         script_path = os.path.join(tmpdir, "analysis.R")
         with open(script_path, "w") as f:
             f.write(r_script)
@@ -98,6 +102,8 @@ def run_r_analysis(self, r_script: str, job_id: str):
             "stderr": stderr.decode("utf-8", errors="replace"),
             "job_id": job_id,
         }
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 @celery_app.task(bind=True, name="run_ols_analysis")
@@ -166,8 +172,13 @@ def run_ols_analysis(self, job_id: str, prompt: str):
         # Step 6: Render R script
         r_script = render_ols_script(dep_var, indep_vars, transformations, "/data/data.csv")
 
-        # Step 7: Write CSV + R script, run Docker
-        with tempfile.TemporaryDirectory() as tmpdir:
+        # Step 7: Write CSV + R script to a host-shared directory so Docker
+        # volume mounts resolve correctly (celery-worker uses docker.sock,
+        # so mount paths must exist on the Docker host, not inside this container).
+        sandbox_base = os.environ.get("R_SANDBOX_TMPDIR", tempfile.gettempdir())
+        tmpdir = os.path.join(sandbox_base, f"job-{job_id}")
+        os.makedirs(tmpdir, exist_ok=True)
+        try:
             csv_path = os.path.join(tmpdir, "data.csv")
             df.to_csv(csv_path, index=True, index_label="date")
             script_path = os.path.join(tmpdir, "analysis.R")
@@ -263,6 +274,8 @@ def run_ols_analysis(self, job_id: str, prompt: str):
                 session.commit()
 
             return {"status": "error", "job_id": job_id}
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     except Exception as exc:
         # Unexpected exception: store error on Job and re-raise for Celery

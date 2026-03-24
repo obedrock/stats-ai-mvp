@@ -54,8 +54,10 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:?Set ANTHROPIC_API_KEY}
       - FRED_API_KEY=${FRED_API_KEY:?Set FRED_API_KEY}
+      - R_SANDBOX_TMPDIR=/tmp/stats-ai-r-sandbox
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/stats-ai-r-sandbox:/tmp/stats-ai-r-sandbox
     depends_on:
       postgres:
         condition: service_healthy
