@@ -1,25 +1,12 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error -- react-plotly.js has no bundled type declarations
-import * as plotlyFactory from "react-plotly.js/factory";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error -- plotly.js-dist-min has no bundled type declarations
-import * as Plotly from "plotly.js-dist-min";
+import { lazy, Suspense } from "react";
 import type { ChartData } from "@/types/analysis";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-const createPlotlyComponent = (plotlyFactory as any).default || plotlyFactory;
-// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-const PlotlyLib = (Plotly as any).default || Plotly;
-const Plot = createPlotlyComponent(PlotlyLib) as React.ComponentType<{
+// Lazy-load plotly to avoid CJS/ESM interop issues in production builds.
+// react-plotly.js's default entry wires factory + plotly together internally.
+const Plot = lazy(() =>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  layout: Record<string, any>;
-  useResizeHandler?: boolean;
-  style?: React.CSSProperties;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  config?: Record<string, any>;
-}>;
+  import("react-plotly.js").then((mod) => ({ default: (mod as any).default || mod }))
+);
 
 interface ChartGridProps {
   charts: ChartData[];
@@ -36,27 +23,36 @@ export function ChartGrid({ charts }: ChartGridProps) {
             className="bg-slate-800 border border-slate-700 rounded-lg p-4"
             aria-label={`Chart: ${chart.name.replace(/_/g, " ")}`}
           >
-            <Plot
-              data={chart.data as unknown[]}
-              layout={{
-                ...(chart.layout as Record<string, unknown>),
-                paper_bgcolor: "transparent",
-                plot_bgcolor: "transparent",
-                font: { color: "#f1f5f9" },
-                xaxis: {
-                  ...((chart.layout?.xaxis as Record<string, unknown>) ?? {}),
-                  gridcolor: "#334155",
-                },
-                yaxis: {
-                  ...((chart.layout?.yaxis as Record<string, unknown>) ?? {}),
-                  gridcolor: "#334155",
-                },
-                margin: { l: 50, r: 20, t: 40, b: 40 },
-              }}
-              useResizeHandler={true}
-              style={{ width: "100%", height: "360px" }}
-              config={{ responsive: true, displayModeBar: false }}
-            />
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center h-[360px] text-sm text-muted-foreground">
+                  Loading chart...
+                </div>
+              }
+            >
+              <Plot
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                data={chart.data as any[]}
+                layout={{
+                  ...(chart.layout as Record<string, unknown>),
+                  paper_bgcolor: "transparent",
+                  plot_bgcolor: "transparent",
+                  font: { color: "#f1f5f9" },
+                  xaxis: {
+                    ...((chart.layout?.xaxis as Record<string, unknown>) ?? {}),
+                    gridcolor: "#334155",
+                  },
+                  yaxis: {
+                    ...((chart.layout?.yaxis as Record<string, unknown>) ?? {}),
+                    gridcolor: "#334155",
+                  },
+                  margin: { l: 50, r: 20, t: 40, b: 40 },
+                }}
+                useResizeHandler={true}
+                style={{ width: "100%", height: "360px" }}
+                config={{ responsive: true, displayModeBar: false }}
+              />
+            </Suspense>
           </div>
         ))}
       </div>
