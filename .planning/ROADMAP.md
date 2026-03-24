@@ -53,7 +53,17 @@ Plans:
   4. User can upload a CSV or Excel file, see auto-detected column types, and correct any mapping before proceeding
   5. User can toggle a data preview to inspect the cleaned and merged dataset before running any analysis
   6. A previously fetched dataset is reused from cache on a second analysis that references the same series and date range
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Infrastructure setup (Python deps, Job model migration, shadcn components, test scaffolds)
+- [ ] 02-02-PLAN.md — Type contracts (Pydantic schemas, TypeScript types, Zustand analysis store)
+- [ ] 02-03-PLAN.md — Backend services: series mapper, FRED fetcher, Yahoo fetcher, Redis cache
+- [ ] 02-04-PLAN.md — Backend services: file parser, frequency resolver, data pipeline orchestrator
+- [ ] 02-05-PLAN.md — Backend API: data router endpoints and Celery fetch_data task
+- [ ] 02-06-PLAN.md — Frontend components: PromptInput, SourceChip, UploadDropzone, FrequencyMismatchDialog
+- [ ] 02-07-PLAN.md — Frontend integration: WorkspacePage wiring, DataPreviewPanel, assumptions UI
+
 **UI hint**: yes
 
 ### Phase 3: Core Analysis Engine
@@ -110,7 +120,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 5/5 | Complete   | 2026-03-23 |
-| 2. Data Pipeline | 0/TBD | Not started | - |
+| 2. Data Pipeline | 0/7 | Not started | - |
 | 3. Core Analysis Engine | 0/TBD | Not started | - |
 | 4. Extended Analysis Types | 0/TBD | Not started | - |
 | 5. History & Persistence | 0/TBD | Not started | - |
