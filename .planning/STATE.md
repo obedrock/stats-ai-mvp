@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-10-PLAN.md
-last_updated: "2026-03-24T02:57:41.067Z"
+stopped_at: Completed 02-09-PLAN.md
+last_updated: "2026-03-24T03:00:03.871Z"
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 02 (data-pipeline) — EXECUTING
-Plan: 2 of 10
+Plan: 3 of 10
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Plan: 2 of 10
 | Phase 02 P06 | 267 | 2 tasks | 7 files |
 | Phase 02-data-pipeline P08 | 25 | 2 tasks | 7 files |
 | Phase 02-data-pipeline P10 | 12 | 2 tasks | 2 files |
+| Phase 02-data-pipeline P09 | 5 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,9 @@ Recent decisions affecting current work:
 - [Phase 02-data-pipeline]: TanStack Query v5 onSuccess removed — use useEffect on query data for preview poll transitions
 - [Phase 02-data-pipeline]: pipelineStage Zustand state machine centralizes all conditional rendering in WorkspacePage
 - [Phase 02-data-pipeline]: base-ui Dialog blocking: disablePointerDismissal prop + no-op onOpenChange is the correct API for the installed version (not dismissible prop)
+- [Phase 02-data-pipeline]: Remove job_id from FetchRequest — backend creates Job itself; client never needs to supply it
+- [Phase 02-data-pipeline]: DETECT_TOOL extended with required date_range field — Claude extracts date context from every prompt
+- [Phase 02-data-pipeline]: map_prompt_to_sources return type changed from list to dict with sources and date_range keys
 
 ### Pending Todos
 
@@ -105,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T02:57:41.061Z
-Stopped at: Completed 02-10-PLAN.md
+Last session: 2026-03-24T03:00:03.864Z
+Stopped at: Completed 02-09-PLAN.md
 Resume file: None
