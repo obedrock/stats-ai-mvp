@@ -170,11 +170,12 @@ def run_ols_analysis(self, job_id: str, prompt: str):
         transformations = slots["transformations"]
 
         # Step 6: Render R script
-        r_script = render_ols_script(dep_var, indep_vars, transformations, "/data/data.csv")
+        r_script = render_ols_script(dep_var, indep_vars, transformations)
 
-        # Step 7: Write CSV + R script to a host-shared directory so Docker
-        # volume mounts resolve correctly (celery-worker uses docker.sock,
-        # so mount paths must exist on the Docker host, not inside this container).
+        # Step 7: Write CSV + R script to a host-shared directory.
+        # The celery-worker uses docker.sock so bind-mount paths resolve on the
+        # Docker host, not inside this container. R_SANDBOX_TMPDIR is bind-mounted
+        # to the same host path in docker-compose.prod.yml.
         sandbox_base = os.environ.get("R_SANDBOX_TMPDIR", tempfile.gettempdir())
         tmpdir = os.path.join(sandbox_base, f"job-{job_id}")
         os.makedirs(tmpdir, exist_ok=True)

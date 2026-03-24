@@ -103,20 +103,18 @@ def render_ols_script(
     dep_var: str,
     indep_vars: list[str],
     transformations: str,
-    data_path: str,
 ) -> str:
     """Render the OLS R script by filling the template slots.
 
-    Reads ``backend/app/templates/ols_template.R`` and replaces the four
-    placeholder tokens with the values produced by :func:`generate_ols_slots`
-    plus the container-internal path to the data CSV.
+    Reads ``backend/app/templates/ols_template.R`` and replaces the three
+    placeholder tokens with the values produced by :func:`generate_ols_slots`.
+    The data path is hardcoded to ``/data/data.csv`` in the template (mounted
+    into the Docker container by the Celery task).
 
     Args:
         dep_var: Dependent variable column name.
         indep_vars: Independent variable column names.
         transformations: R code block for variable transformations, or empty string.
-        data_path: Path to the data CSV file inside the Docker container
-            (e.g. ``/data/data.csv``).
 
     Returns:
         The filled R script as a string, ready to write to a temp file and
@@ -127,8 +125,7 @@ def render_ols_script(
 
     indep_vars_str = " + ".join(indep_vars)
 
-    script = template.replace("{{DATA_PATH}}", data_path)
-    script = script.replace("{{DEP_VAR}}", dep_var)
+    script = template.replace("{{DEP_VAR}}", dep_var)
     script = script.replace("{{INDEP_VARS}}", indep_vars_str)
     script = script.replace("{{TRANSFORMATIONS}}", transformations)
 
