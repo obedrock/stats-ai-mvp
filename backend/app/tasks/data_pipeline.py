@@ -6,6 +6,7 @@ resolution application, cleaning, and merging.
 DATA-15: Cache fetched data in Redis with source-appropriate TTL.
 DATA-09: Detect and return frequency conflicts to the frontend.
 """
+import io
 import json
 
 import pandas as pd
@@ -63,7 +64,7 @@ def fetch_data(
                     "sub_status": f"Cache hit: {source}: {series_id}",
                 },
             )
-            df = pd.read_json(cached)
+            df = pd.read_json(io.StringIO(cached))
             # IMPORTANT: Restore UTC timezone on cached DataFrames before
             # frequency conflict check. pd.read_json loses timezone info,
             # and check_frequency_conflict requires consistent UTC indexes
