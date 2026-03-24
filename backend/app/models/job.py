@@ -34,6 +34,12 @@ class Job(Base):
     result_stdout: Mapped[str] = mapped_column(Text, nullable=True)
     result_stderr: Mapped[str] = mapped_column(Text, nullable=True)
     error_message: Mapped[str] = mapped_column(Text, nullable=True)
+    # Phase 3: Analysis result columns
+    r_result_json: Mapped[str] = mapped_column(Text, nullable=True)       # Parsed R JSON output (full)
+    interpretation: Mapped[str] = mapped_column(Text, nullable=True)       # Claude Stage 2 text
+    follow_up_suggestions: Mapped[str] = mapped_column(Text, nullable=True)  # JSON array of {title, explanation, prompt_text}
+    error_explanation: Mapped[str] = mapped_column(Text, nullable=True)    # Claude error text (R failure path)
+    suggested_prompt: Mapped[str] = mapped_column(Text, nullable=True)     # Claude suggested fix (R failure path)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
