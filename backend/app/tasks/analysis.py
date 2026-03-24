@@ -155,6 +155,10 @@ def run_ols_analysis(self, job_id: str, prompt: str):
         dep_var = slots["dep_var"]
         indep_vars = slots["indep_vars"]
         transformations = slots["transformations"]
+        logger.info(
+            "[run_ols_analysis] job=%s dep_var=%s indep_vars=%s transformations=%r",
+            job_id, dep_var, indep_vars, transformations,
+        )
 
         # Step 6: Render R script
         r_script = render_ols_script(dep_var, indep_vars, transformations)
