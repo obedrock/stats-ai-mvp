@@ -81,7 +81,15 @@ Plans:
   4. The generated R code for the analysis is visible and copyable on the results page
   5. When R returns an error, the user sees a plain-English explanation of what went wrong and what to try next — not a raw R stack trace
   6. After receiving results, Claude suggests 2-3 related follow-up tests the user might want to run
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Type contracts, R template, Job model migration
+- [ ] 03-02-PLAN.md — Claude API services (Stage 1 code gen + Stage 2 interpretation)
+- [ ] 03-03-PLAN.md — Backend pipeline: Celery task, analysis router, API endpoints
+- [ ] 03-04-PLAN.md — Frontend result components (9 components + react-plotly.js)
+- [ ] 03-05-PLAN.md — Frontend integration: WorkspacePage wiring, store, polling
+
 **UI hint**: yes
 
 ### Phase 4: Extended Analysis Types
@@ -119,13 +127,13 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 5/5 | Complete   | 2026-03-23 |
 | 2. Data Pipeline | 10/10 | Complete   | 2026-03-24 |
-| 3. Core Analysis Engine | 0/TBD | Not started | - |
+| 3. Core Analysis Engine | 0/5 | Planning complete | - |
 | 4. Extended Analysis Types | 0/TBD | Not started | - |
 | 5. History & Persistence | 0/TBD | Not started | - |
 | 6. Export & Polish | 0/TBD | Not started | - |
