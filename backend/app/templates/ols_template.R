@@ -13,14 +13,21 @@ suppressPackageStartupMessages(library(plotly))
 suppressPackageStartupMessages(library(jsonlite))
 
 # ── Data loading ──────────────────────────────────────────────────────────────
-df <- read.csv("/data/data.csv", stringsAsFactors = FALSE)
+df <- read.csv("/data/data.csv", stringsAsFactors = FALSE, check.names = FALSE)
 df$date <- as.Date(df$date)
+
+# DEBUG: print CSV diagnostics to stderr so they appear in logs
+message("DEBUG nrow=", nrow(df), " ncol=", ncol(df))
+message("DEBUG colnames=", paste(colnames(df), collapse=", "))
+message("DEBUG head=")
+message(paste(capture.output(head(df, 3)), collapse="\n"))
 
 # ── Transformations (Claude fills this block) ─────────────────────────────────
 {{TRANSFORMATIONS}}
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 formula_str <- "{{DEP_VAR}} ~ {{INDEP_VARS}}"
+message("DEBUG formula=", formula_str)
 model <- lm(as.formula(formula_str), data = df)
 coef_summary <- summary(model)$coefficients
 ci <- confint(model)

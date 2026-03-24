@@ -198,8 +198,8 @@ def run_ols_analysis(self, job_id: str, prompt: str):
 
             exit_code, stdout, stderr = _run_r_container(volumes=volumes)
             logger.info(
-                "[run_ols_analysis] job=%s exit_code=%d stdout_len=%d stdout_head=%s stderr=%s",
-                job_id, exit_code, len(stdout), stdout[:500], stderr[:1000],
+                "[run_ols_analysis] job=%s exit_code=%d stdout_len=%d stderr=\n%s",
+                job_id, exit_code, len(stdout), stderr[:3000],
             )
 
             # Step 8: On R success
