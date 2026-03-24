@@ -6,11 +6,14 @@ import pytest
 from app.services import series_mapper
 
 
-def _make_tool_use_response(sources: list[dict]) -> MagicMock:
+def _make_tool_use_response(sources: list[dict], date_range: dict | None = None) -> MagicMock:
     """Build a mock Anthropic response with a tool_use content block."""
     tool_use_block = MagicMock()
     tool_use_block.type = "tool_use"
-    tool_use_block.input = {"sources": sources}
+    tool_use_block.input = {
+        "sources": sources,
+        "date_range": date_range or {"start": "2006-01-01", "end": "2026-01-01"},
+    }
 
     response = MagicMock()
     response.content = [tool_use_block]
@@ -36,9 +39,12 @@ def test_map_prompt_detects_fred_source():
 
         result = series_mapper.map_prompt_to_sources("GDP growth since 2000")
 
-    assert len(result) == 1
-    assert result[0]["source"] == "FRED"
-    assert result[0]["series_id"] == "GDPC1"
+    assert isinstance(result, dict)
+    assert "sources" in result
+    assert "date_range" in result
+    assert len(result["sources"]) == 1
+    assert result["sources"][0]["source"] == "FRED"
+    assert result["sources"][0]["series_id"] == "GDPC1"
 
 
 def test_map_prompt_detects_yahoo_source():
@@ -60,9 +66,11 @@ def test_map_prompt_detects_yahoo_source():
 
         result = series_mapper.map_prompt_to_sources("AAPL price since 2020")
 
-    assert len(result) == 1
-    assert result[0]["source"] == "YAHOO"
-    assert result[0]["series_id"] == "AAPL"
+    assert isinstance(result, dict)
+    assert "sources" in result
+    assert len(result["sources"]) == 1
+    assert result["sources"][0]["source"] == "YAHOO"
+    assert result["sources"][0]["series_id"] == "AAPL"
 
 
 def test_map_prompt_multi_source():
@@ -90,7 +98,9 @@ def test_map_prompt_multi_source():
 
         result = series_mapper.map_prompt_to_sources("AAPL vs GDP since 2010")
 
-    assert len(result) == 2
-    sources_set = {r["source"] for r in result}
+    assert isinstance(result, dict)
+    assert "sources" in result
+    assert len(result["sources"]) == 2
+    sources_set = {r["source"] for r in result["sources"]}
     assert "FRED" in sources_set
     assert "YAHOO" in sources_set

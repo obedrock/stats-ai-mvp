@@ -35,14 +35,17 @@ async def test_parse_prompt_endpoint(client):
     """POST /data/parse-prompt should return detected sources and series for a valid prompt."""
     headers = await _auth_header(client)
 
-    mock_sources = [
-        {
-            "source": "FRED",
-            "series_id": "GDPC1",
-            "display_name": "Real GDP",
-            "rationale": "GDP growth requires real GDP series",
-        }
-    ]
+    mock_sources = {
+        "sources": [
+            {
+                "source": "FRED",
+                "series_id": "GDPC1",
+                "display_name": "Real GDP",
+                "rationale": "GDP growth requires real GDP series",
+            }
+        ],
+        "date_range": None,
+    }
 
     with patch(
         "app.routers.data.map_prompt_to_sources", return_value=mock_sources
@@ -137,7 +140,6 @@ async def test_assumptions_detailed_gate(client):
         response = await client.post(
             "/data/fetch",
             json={
-                "job_id": "ignored",
                 "sources": [
                     {
                         "source": "FRED",
@@ -193,7 +195,6 @@ async def test_frequency_conflict_returned(client):
         submit = await client.post(
             "/data/fetch",
             json={
-                "job_id": "ignored",
                 "sources": [
                     {
                         "source": "FRED",
@@ -261,7 +262,6 @@ async def test_preview_response(client):
         submit = await client.post(
             "/data/fetch",
             json={
-                "job_id": "ignored",
                 "sources": [
                     {
                         "source": "FRED",
@@ -297,3 +297,69 @@ async def test_preview_response(client):
     assert data["columns"][0]["name"] == "value"
     assert "assumptions" in data
     assert len(data["cache_keys"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_parse_prompt_returns_date_range(client):
+    """POST /data/parse-prompt should return date_range extracted from prompt."""
+    headers = await _auth_header(client)
+
+    mock_result = {
+        "sources": [
+            {
+                "source": "FRED",
+                "series_id": "GDPC1",
+                "display_name": "Real GDP",
+                "rationale": "GDP growth requires real GDP series",
+            }
+        ],
+        "date_range": {"start": "2000-01-01", "end": "2023-12-31"},
+    }
+
+    with patch(
+        "app.routers.data.map_prompt_to_sources", return_value=mock_result
+    ), patch(
+        "app.routers.data.validate_series", new_callable=AsyncMock, return_value=(True, [])
+    ):
+        response = await client.post(
+            "/data/parse-prompt",
+            json={"prompt": "GDP growth from 2000 to 2023", "mode": "quick"},
+            headers=headers,
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["date_range"] == {"start": "2000-01-01", "end": "2023-12-31"}
+
+
+@pytest.mark.asyncio
+async def test_fetch_without_job_id_succeeds(client):
+    """POST /data/fetch should succeed without job_id in the request body."""
+    headers = await _auth_header(client)
+
+    mock_task = MagicMock()
+    mock_task.id = "fake-celery-no-jobid"
+
+    with patch("app.routers.data.fetch_data") as mock_fetch_data:
+        mock_fetch_data.delay.return_value = mock_task
+        response = await client.post(
+            "/data/fetch",
+            json={
+                "sources": [
+                    {
+                        "source": "FRED",
+                        "series_id": "GDPC1",
+                        "display_name": "Real GDP",
+                        "rationale": "GDP",
+                    }
+                ],
+                "date_range": None,
+                "mode": "quick",
+            },
+            headers=headers,
+        )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert "id" in data
+    assert data["status"] == "queued"
