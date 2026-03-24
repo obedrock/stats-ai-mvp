@@ -29,7 +29,7 @@ import type {
   AssumptionItem,
   ParsedSource,
 } from "@/types/data";
-import type { AnalysisResult, AnalysisError } from "@/types/analysis";
+import type { AnalysisResult } from "@/types/analysis";
 import type { ColumnMapping } from "@/components/ColumnMappingTable";
 
 // Shape returned by /data/fetch and /data/resolve-frequency
