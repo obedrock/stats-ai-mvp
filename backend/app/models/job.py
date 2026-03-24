@@ -23,6 +23,13 @@ class Job(Base):
     # stage: queued, fetching_data, running_r, generating_interpretation, done
     stage: Mapped[str] = mapped_column(String(50), default="queued")
     r_script: Mapped[str] = mapped_column(Text, nullable=True)
+    # Phase 2: Data pipeline columns
+    prompt: Mapped[str] = mapped_column(Text, nullable=True)
+    data_sources: Mapped[str] = mapped_column(Text, nullable=True)  # JSON array of {source, series_id, display_name}
+    resolution_method: Mapped[str] = mapped_column(String(50), nullable=True)  # e.g., "mean", "last", "sum", "ffill"
+    analysis_mode: Mapped[str] = mapped_column(String(20), nullable=True)  # "quick" or "detailed"
+    assumptions: Mapped[str] = mapped_column(Text, nullable=True)  # JSON array of assumption strings
+    cached_data_keys: Mapped[str] = mapped_column(Text, nullable=True)  # JSON array of Redis cache keys used
     result_stdout: Mapped[str] = mapped_column(Text, nullable=True)
     result_stderr: Mapped[str] = mapped_column(Text, nullable=True)
     error_message: Mapped[str] = mapped_column(Text, nullable=True)
