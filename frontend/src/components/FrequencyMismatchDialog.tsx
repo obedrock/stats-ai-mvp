@@ -63,7 +63,10 @@ export function FrequencyMismatchDialog({
   return (
     <Dialog
       open={true}
-      dismissible={false}
+      disablePointerDismissal={true}
+      onOpenChange={() => {
+        // Block all dismissal: outside click (disablePointerDismissal) and Escape key (no-op here)
+      }}
     >
       <DialogContent
         showCloseButton={false}
