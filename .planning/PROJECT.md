@@ -12,29 +12,29 @@ The data acquisition and preparation pipeline must work reliably — automatical
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Auto-detect data sources from prompt context (FRED for macro data, Yahoo Finance for market data) — Validated in Phase 2: Data Pipeline
+- [x] User override for data source selection — Validated in Phase 2: Data Pipeline
+- [x] Automatic data cleaning: missing values, date alignment, unit conversion, outlier handling — Validated in Phase 2: Data Pipeline
+- [x] Frequency mismatch handling with user confirmation (interpolate, aggregate, or align) — Validated in Phase 2: Data Pipeline
+- [x] Smart assumptions engine (levels vs %, log transforms, lag structure) with two modes:
+  - Quick mode: run with smart defaults, explain assumptions in results
+  - Detailed mode: list assumptions for user approval before execution
+  — Validated in Phase 2: Data Pipeline
+- [x] User data upload with guided parsing (auto-detect columns/types, user confirms mappings) — Validated in Phase 2: Data Pipeline
+- [x] Optional data preview toggle (see cleaned/merged dataset before analysis) — Validated in Phase 2: Data Pipeline
+- [x] Cached datasets for reuse across analyses — Validated in Phase 2: Data Pipeline
+- [x] Simple email/password authentication — Validated in Phase 1: Foundation & Infrastructure
 
 ### Active
 
 - [ ] Natural language prompt → R code generation via Claude API
-- [ ] Auto-detect data sources from prompt context (FRED for macro data, Yahoo Finance for market data)
-- [ ] User override for data source selection
-- [ ] Automatic data cleaning: missing values, date alignment, unit conversion, outlier handling
-- [ ] Frequency mismatch handling with user confirmation (interpolate, aggregate, or align)
-- [ ] Smart assumptions engine (levels vs %, log transforms, lag structure) with two modes:
-  - Quick mode: run with smart defaults, explain assumptions in results
-  - Detailed mode: list assumptions for user approval before execution
-- [ ] User data upload with guided parsing (auto-detect columns/types, user confirms mappings)
-- [ ] Optional data preview toggle (see cleaned/merged dataset before analysis)
 - [ ] OLS, logistic, panel, and time series regressions
 - [ ] Diagnostic tests: heteroskedasticity, autocorrelation, multicollinearity, normality
 - [ ] Model comparison and selection
 - [ ] Results display: plain-English interpretation + coefficient tables + interactive charts
 - [ ] Visualizations: coefficient plots, residual plots, time series plots
-- [ ] Simple email/password authentication
 - [ ] Analysis history (past prompts and results)
 - [ ] Generated R code visible/copyable for each analysis
-- [ ] Cached datasets for reuse across analyses
 - [ ] Shareable analysis links via URL
 
 ### Out of Scope
@@ -91,4 +91,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-23 after initialization*
+*Last updated: 2026-03-24 after Phase 2 completion*
