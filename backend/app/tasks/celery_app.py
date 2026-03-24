@@ -6,7 +6,7 @@ celery_app = Celery(
     "stats_ai",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.tasks.analysis"],
+    include=["app.tasks.analysis", "app.tasks.data_pipeline"],
 )
 
 celery_app.conf.update(

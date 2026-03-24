@@ -13,6 +13,7 @@ class JobStatus(BaseModel):
     id: UUID
     status: str
     stage: str
+    sub_status: Optional[str] = None  # Per-source fetch progress (data pipeline)
     result_stdout: Optional[str] = None
     result_stderr: Optional[str] = None
     error_message: Optional[str] = None
