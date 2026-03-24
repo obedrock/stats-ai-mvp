@@ -106,6 +106,7 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             if not job:
                 raise ValueError(f"Job {job_id} not found in database")
             cached_data_keys = json.loads(job.cached_data_keys) if job.cached_data_keys else []
+            resolution_method = job.resolution_method  # e.g. "mean", or None
 
         # Step 3: Reconstruct DataFrame from Redis cache
         redis_client = redis.from_url(settings.redis_url)
@@ -125,6 +126,21 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             # has meaningful column names (GDPC1, DFF, etc.) for R formulas
             df = df.rename(columns={"value": series_id})
             dataframes[series_id] = df
+
+        # Step 3b: Re-apply frequency resolution if the user chose one.
+        # Redis cache stores raw un-resolved data; the resolution was only
+        # applied in-memory during the fetch_data task.
+        if resolution_method and len(dataframes) > 1:
+            from app.services.frequency_resolver import check_frequency_conflict, apply_resolution
+            conflict = check_frequency_conflict(dataframes)
+            if conflict["has_conflict"]:
+                target_freq = conflict["target_frequency"]
+                logger.info(
+                    "[run_ols_analysis] job=%s applying frequency resolution: method=%s target=%s",
+                    job_id, resolution_method, target_freq,
+                )
+                for sid, dframe in list(dataframes.items()):
+                    dataframes[sid] = apply_resolution(dframe, target_freq, resolution_method)
 
         result = clean_and_merge(dataframes)
         df = result["merged_df"]
