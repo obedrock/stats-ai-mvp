@@ -9,6 +9,7 @@ interface JobStatusResponse {
   id: string;
   status: string;
   stage: string;
+  sub_status?: string;
   result_stdout?: string;
   result_stderr?: string;
   error_message?: string;
@@ -163,6 +164,11 @@ export function JobStatusCard({ jobId, onComplete, onCancel }: JobStatusCardProp
             );
           })}
         </div>
+
+        {/* Sub-status line during fetching_data stage */}
+        {jobStatus?.stage === "fetching_data" && jobStatus.sub_status && (
+          <span className="text-[12px] text-slate-400">{jobStatus.sub_status}</span>
+        )}
 
         {/* Elapsed time */}
         <div className="text-xs text-slate-400">
