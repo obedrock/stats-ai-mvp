@@ -19,6 +19,8 @@ import type {
   FrequencyConflict,
   DataPreview,
   ResolutionChoice,
+  AssumptionItem,
+  ParsedSource,
 } from "@/types/data";
 import type { ColumnMapping } from "@/components/ColumnMappingTable";
 
@@ -65,6 +67,7 @@ export default function WorkspacePage() {
     setResolution,
     setPreview,
     setUploadResult,
+    setAssumptions,
     setPipelineStage,
     setJobId,
     reset,
@@ -117,6 +120,52 @@ export default function WorkspacePage() {
     }
   }, [previewPollData, pipelineStage, setFrequencyConflict, setPreview, setPipelineStage]);
 
+  // ---- Helpers ----
+
+  function buildPrefetchAssumptions(srcs: ParsedSource[]): AssumptionItem[] {
+    const items: AssumptionItem[] = [];
+    for (const src of srcs) {
+      if (src.source === "FRED") {
+        items.push({
+          key: `log_${src.series_id}`,
+          label: `Log-transform ${src.display_name} (${src.series_id})`,
+          recommended: true,
+          confirmed: null,
+        });
+        items.push({
+          key: `pct_${src.series_id}`,
+          label: `Express ${src.display_name} as % change`,
+          recommended: false,
+          confirmed: null,
+        });
+      }
+      if (src.source === "YAHOO") {
+        items.push({
+          key: `log_${src.series_id}`,
+          label: `Log-transform ${src.display_name} price`,
+          recommended: false,
+          confirmed: null,
+        });
+        items.push({
+          key: `returns_${src.series_id}`,
+          label: `Use returns instead of price levels for ${src.display_name}`,
+          recommended: true,
+          confirmed: null,
+        });
+      }
+    }
+    // Common multi-source assumption
+    if (srcs.length > 1) {
+      items.push({
+        key: "lag_1",
+        label: "Include 1-period lag for independent variables",
+        recommended: false,
+        confirmed: null,
+      });
+    }
+    return items;
+  }
+
   // ---- Handlers ----
 
   async function handlePromptSubmit(promptText: string) {
@@ -130,6 +179,11 @@ export default function WorkspacePage() {
       setSources(response.sources);
       setDateRange(response.date_range);
       setPipelineStage("confirming_sources");
+      // Populate pre-fetch assumptions for detailed mode
+      if (mode === "detailed") {
+        const prefetchAssumptions = buildPrefetchAssumptions(response.sources);
+        setAssumptions(prefetchAssumptions);
+      }
     } catch {
       setError("Could not parse your prompt. Please try again.");
       setPipelineStage("idle");
