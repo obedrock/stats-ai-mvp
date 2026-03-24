@@ -34,6 +34,8 @@ services:
       - ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=10080
       - DEBUG=false
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:?Set ANTHROPIC_API_KEY}
+      - FRED_API_KEY=${FRED_API_KEY:?Set FRED_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,6 +52,8 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-stats_ai}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-stats_ai}
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=${SECRET_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:?Set ANTHROPIC_API_KEY}
+      - FRED_API_KEY=${FRED_API_KEY:?Set FRED_API_KEY}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
