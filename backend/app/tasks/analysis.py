@@ -225,55 +225,55 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             finally:
                 _current_proc = None
 
-        # Step 8: On R success
-        if returncode == 0:
-            r_result = json.loads(stdout.decode("utf-8"))
+            # Step 8: On R success
+            if returncode == 0:
+                r_result = json.loads(stdout.decode("utf-8"))
 
-            # Process plotly_charts: parse inner JSON string for each chart
-            if "plotly_charts" in r_result:
-                processed_charts = []
-                for chart in r_result["plotly_charts"]:
-                    parsed = json.loads(chart["json"])
-                    processed_charts.append({
-                        "name": chart["name"],
-                        "data": parsed.get("data", []),
-                        "layout": parsed.get("layout", {}),
-                    })
-                r_result["plotly_charts"] = processed_charts
+                # Process plotly_charts: parse inner JSON string for each chart
+                if "plotly_charts" in r_result:
+                    processed_charts = []
+                    for chart in r_result["plotly_charts"]:
+                        parsed = json.loads(chart["json"])
+                        processed_charts.append({
+                            "name": chart["name"],
+                            "data": parsed.get("data", []),
+                            "layout": parsed.get("layout", {}),
+                        })
+                    r_result["plotly_charts"] = processed_charts
 
-            self.update_state(state="PROGRESS", meta={"stage": "generating_interpretation", "job_id": job_id})
-            interp = interpret_ols_results(prompt, r_result)
+                self.update_state(state="PROGRESS", meta={"stage": "generating_interpretation", "job_id": job_id})
+                interp = interpret_ols_results(prompt, r_result)
 
-            with Session(engine) as session:
-                job = session.get(Job, uuid.UUID(job_id))
-                job.status = "success"
-                job.stage = "done"
-                job.r_script = r_script
-                job.r_result_json = json.dumps(r_result)
-                job.result_stdout = stdout.decode("utf-8", errors="replace")
-                job.interpretation = interp["interpretation"]
-                job.follow_up_suggestions = json.dumps(interp["follow_up_suggestions"])
-                session.commit()
+                with Session(engine) as session:
+                    job = session.get(Job, uuid.UUID(job_id))
+                    job.status = "success"
+                    job.stage = "done"
+                    job.r_script = r_script
+                    job.r_result_json = json.dumps(r_result)
+                    job.result_stdout = stdout.decode("utf-8", errors="replace")
+                    job.interpretation = interp["interpretation"]
+                    job.follow_up_suggestions = json.dumps(interp["follow_up_suggestions"])
+                    session.commit()
 
-            return {"status": "success", "job_id": job_id}
+                return {"status": "success", "job_id": job_id}
 
-        # Step 9: On R error
-        else:
-            stderr_text = stderr.decode("utf-8", errors="replace")
-            self.update_state(state="PROGRESS", meta={"stage": "generating_interpretation", "job_id": job_id})
-            err = explain_r_error(prompt, stderr_text)
+            # Step 9: On R error
+            else:
+                stderr_text = stderr.decode("utf-8", errors="replace")
+                self.update_state(state="PROGRESS", meta={"stage": "generating_interpretation", "job_id": job_id})
+                err = explain_r_error(prompt, stderr_text)
 
-            with Session(engine) as session:
-                job = session.get(Job, uuid.UUID(job_id))
-                job.status = "error"
-                job.stage = "done"
-                job.r_script = r_script
-                job.result_stderr = stderr_text
-                job.error_explanation = err["error_explanation"]
-                job.suggested_prompt = err["suggested_prompt"]
-                session.commit()
+                with Session(engine) as session:
+                    job = session.get(Job, uuid.UUID(job_id))
+                    job.status = "error"
+                    job.stage = "done"
+                    job.r_script = r_script
+                    job.result_stderr = stderr_text
+                    job.error_explanation = err["error_explanation"]
+                    job.suggested_prompt = err["suggested_prompt"]
+                    session.commit()
 
-            return {"status": "error", "job_id": job_id}
+                return {"status": "error", "job_id": job_id}
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 
