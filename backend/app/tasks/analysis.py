@@ -121,7 +121,8 @@ def run_ols_analysis(self, job_id: str, prompt: str):
     self.update_state(state="PROGRESS", meta={"stage": "preparing", "job_id": job_id})
 
     # Sync SQLAlchemy engine for Celery worker context
-    database_url = os.environ.get("DATABASE_URL", "sqlite:///./test.db")
+    from app.config import settings
+    database_url = settings.database_url.replace("+asyncpg", "")
     engine = create_engine(database_url)
 
     try:
@@ -133,7 +134,7 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             cached_data_keys = json.loads(job.cached_data_keys) if job.cached_data_keys else []
 
         # Step 3: Reconstruct DataFrame from Redis cache
-        redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+        redis_url = settings.redis_url
         redis_client = redis.from_url(redis_url)
 
         dataframes: dict[str, pd.DataFrame] = {}

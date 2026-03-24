@@ -3,8 +3,6 @@
 Uses Claude's tool_use feature to extract structured data source information
 from a natural language analysis request.
 """
-import os
-
 import anthropic
 
 _client = None
@@ -61,7 +59,8 @@ def get_client() -> anthropic.Anthropic:
     """Lazily initialize and return the Anthropic client."""
     global _client
     if _client is None:
-        _client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        from app.config import settings
+        _client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     return _client
 
 

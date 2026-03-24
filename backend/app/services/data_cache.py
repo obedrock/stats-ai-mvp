@@ -6,8 +6,6 @@ Provides get/set operations with TTL support using source-appropriate expiry:
 
 Key format: {source}:{series_id}:{start}:{end}
 """
-import os
-
 import redis as redis_lib
 
 _redis = None
@@ -17,7 +15,8 @@ def get_redis() -> redis_lib.Redis:
     """Lazily initialize and return the Redis client."""
     global _redis
     if _redis is None:
-        _redis = redis_lib.Redis.from_url(os.environ.get("REDIS_URL", "redis://redis:6379/0"))
+        from app.config import settings
+        _redis = redis_lib.Redis.from_url(settings.redis_url)
     return _redis
 
 

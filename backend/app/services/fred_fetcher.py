@@ -4,8 +4,6 @@ Validates series IDs against the FRED REST API before use (per D-02).
 Falls back to Fred.search() for suggestions on invalid IDs.
 Fetches data via fredapi and normalizes DatetimeIndex to UTC.
 """
-import os
-
 import httpx
 import pandas as pd
 
@@ -23,7 +21,8 @@ async def validate_series(series_id: str) -> tuple[bool, list[dict]]:
         (False, suggestions) if the series is invalid, where suggestions
         is a list of dicts with keys "id" and "name".
     """
-    api_key = os.environ.get("FRED_API_KEY", "")
+    from app.config import settings
+    api_key = settings.fred_api_key
     async with httpx.AsyncClient() as client:
         r = await client.get(
             f"{FRED_BASE}/series",
@@ -56,7 +55,8 @@ def fetch_fred_series(series_id: str, start: str, end: str) -> pd.DataFrame:
     """
     import fredapi
 
-    api_key = os.environ.get("FRED_API_KEY", "")
+    from app.config import settings
+    api_key = settings.fred_api_key
     fred = fredapi.Fred(api_key=api_key)
     series = fred.get_series(series_id, observation_start=start, observation_end=end)
 
