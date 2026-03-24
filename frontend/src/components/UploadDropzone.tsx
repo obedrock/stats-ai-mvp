@@ -4,13 +4,6 @@ import type { UploadResult } from "@/types/data";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const ACCEPTED_EXTENSIONS = [".csv", ".xlsx", ".xls", ".json"];
-const ACCEPTED_MIME = [
-  "text/csv",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/json",
-  "text/plain",
-];
 
 interface UploadDropzoneProps {
   onUpload: (result: UploadResult) => void;

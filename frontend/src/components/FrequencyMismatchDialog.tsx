@@ -70,14 +70,10 @@ export function FrequencyMismatchDialog({
           details.preventUnmountOnClose?.();
         }
       }}
-      // @ts-expect-error — base-ui prop not in shadcn wrapper types
-      disablePointerDismissal={true}
     >
       <DialogContent
         showCloseButton={false}
         className="sm:max-w-lg bg-card border-border"
-        // Block outside click interaction
-        onInteractOutside={(e: Event) => e.preventDefault()}
       >
         <DialogHeader>
           <DialogTitle className="text-[20px] font-semibold text-foreground">
