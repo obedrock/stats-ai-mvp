@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-06-PLAN.md
-last_updated: "2026-03-24T01:42:23.516Z"
+stopped_at: "Checkpoint 02-08 Task 3: awaiting user visual verification"
+last_updated: "2026-03-24T01:51:15.420Z"
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 02 (data-pipeline) — EXECUTING
-Plan: 6 of 8
+Plan: 7 of 8
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Plan: 6 of 8
 | Phase 02 P02 | 8 | 2 tasks | 22 files |
 | Phase 02-data-pipeline P07 | 20 | 2 tasks | 6 files |
 | Phase 02 P06 | 267 | 2 tasks | 7 files |
+| Phase 02-data-pipeline P08 | 25 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Recent decisions affecting current work:
 - [Phase 02-data-pipeline]: base-ui Dialog blocking: disablePointerDismissal prop + onInteractOutside preventDefault for FrequencyMismatchDialog
 - [Phase 02]: resolve-frequency endpoint creates new Job to preserve original job state for audit trail
 - [Phase 02]: run_in_executor used for sync blocking calls (Claude API, file I/O) inside async FastAPI endpoints
+- [Phase 02-data-pipeline]: TanStack Query v5 onSuccess removed — use useEffect on query data for preview poll transitions
+- [Phase 02-data-pipeline]: pipelineStage Zustand state machine centralizes all conditional rendering in WorkspacePage
 
 ### Pending Todos
 
@@ -100,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T01:42:23.511Z
-Stopped at: Completed 02-06-PLAN.md
+Last session: 2026-03-24T01:51:15.414Z
+Stopped at: Checkpoint 02-08 Task 3: awaiting user visual verification
 Resume file: None

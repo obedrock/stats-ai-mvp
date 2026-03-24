@@ -13,7 +13,7 @@ Stats-AI is built in six phases that follow a strict dependency order: secure in
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Infrastructure** - Project scaffolding, auth, async job queue, and sandboxed R execution environment (completed 2026-03-23)
-- [ ] **Phase 2: Data Pipeline** - Auto-pull from FRED and Yahoo Finance, data cleaning, frequency mismatch handling, user uploads, caching, and data preview
+- [x] **Phase 2: Data Pipeline** - Auto-pull from FRED and Yahoo Finance, data cleaning, frequency mismatch handling, user uploads, caching, and data preview (completed 2026-03-24)
 - [ ] **Phase 3: Core Analysis Engine** - OLS regression with full diagnostics, Claude-powered code generation and interpretation, result display, and error feedback
 - [ ] **Phase 4: Extended Analysis Types** - Logistic, panel, and time-series regression; model comparison
 - [ ] **Phase 5: History & Persistence** - Analysis history list and full result revisitation
@@ -64,7 +64,7 @@ Plans:
 - [x] 02-05-PLAN.md — Backend services: file parser, frequency resolver, data pipeline orchestrator
 - [x] 02-06-PLAN.md — Backend API: data router endpoints and Celery fetch_data task
 - [x] 02-07-PLAN.md — Frontend components: PromptInput, SourceChip, UploadDropzone, FrequencyMismatchDialog
-- [ ] 02-08-PLAN.md — Frontend integration: WorkspacePage wiring, DataPreviewPanel, assumptions UI
+- [x] 02-08-PLAN.md — Frontend integration: WorkspacePage wiring, DataPreviewPanel, assumptions UI
 
 **UI hint**: yes
 
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 5/5 | Complete   | 2026-03-23 |
-| 2. Data Pipeline | 7/8 | In Progress|  |
+| 2. Data Pipeline | 8/8 | Complete   | 2026-03-24 |
 | 3. Core Analysis Engine | 0/TBD | Not started | - |
 | 4. Extended Analysis Types | 0/TBD | Not started | - |
 | 5. History & Persistence | 0/TBD | Not started | - |
