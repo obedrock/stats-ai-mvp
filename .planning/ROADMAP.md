@@ -58,7 +58,7 @@ Plans:
 
 Plans:
 - [ ] 02-01-PLAN.md — Python deps, Job model migration, Alembic migration
-- [ ] 02-02-PLAN.md — shadcn UI components, test scaffolds, fixture files
+- [x] 02-02-PLAN.md — shadcn UI components, test scaffolds, fixture files
 - [x] 02-03-PLAN.md — Type contracts (Pydantic schemas, TypeScript types, Zustand analysis store)
 - [ ] 02-04-PLAN.md — Backend services: series mapper, FRED fetcher, Yahoo fetcher, Redis cache
 - [ ] 02-05-PLAN.md — Backend services: file parser, frequency resolver, data pipeline orchestrator
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 5/5 | Complete   | 2026-03-23 |
-| 2. Data Pipeline | 0/8 | Planned    |  |
+| 2. Data Pipeline | 2/8 | In Progress|  |
 | 3. Core Analysis Engine | 0/TBD | Not started | - |
 | 4. Extended Analysis Types | 0/TBD | Not started | - |
 | 5. History & Persistence | 0/TBD | Not started | - |

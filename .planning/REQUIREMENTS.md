@@ -20,14 +20,14 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DATA-03**: System pulls data from FRED API based on detected series
 - [x] **DATA-04**: System pulls data from Yahoo Finance API based on detected ticker/series
 - [x] **DATA-05**: System handles missing values automatically (interpolation, forward-fill, or drop)
-- [ ] **DATA-06**: System aligns different date formats and time zones across sources
-- [ ] **DATA-07**: System normalizes units (billions vs millions, % vs decimal)
-- [ ] **DATA-08**: System flags or handles outliers automatically
+- [x] **DATA-06**: System aligns different date formats and time zones across sources
+- [x] **DATA-07**: System normalizes units (billions vs millions, % vs decimal)
+- [x] **DATA-08**: System flags or handles outliers automatically
 - [x] **DATA-09**: System detects frequency mismatches (daily vs quarterly) and prompts user to choose resolution strategy
 - [x] **DATA-10**: System displays assumptions (levels vs %, log transforms, lag structure) in quick mode — runs with smart defaults, explains in results
 - [x] **DATA-11**: System displays assumptions in detailed mode — lists for user approval before execution
-- [ ] **DATA-12**: User can upload CSV, Excel, or JSON files
-- [ ] **DATA-13**: System auto-detects columns, types, and date formats from uploaded files
+- [x] **DATA-12**: User can upload CSV, Excel, or JSON files
+- [x] **DATA-13**: System auto-detects columns, types, and date formats from uploaded files
 - [x] **DATA-14**: User can confirm or correct column mappings after auto-detection
 - [x] **DATA-15**: Pulled datasets are cached per user for reuse across analyses
 - [x] **DATA-16**: User can preview cleaned/merged dataset before running analysis
@@ -110,14 +110,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-03 | Phase 2 | Complete |
 | DATA-04 | Phase 2 | Complete |
 | DATA-05 | Phase 2 | Complete |
-| DATA-06 | Phase 2 | Pending |
-| DATA-07 | Phase 2 | Pending |
-| DATA-08 | Phase 2 | Pending |
+| DATA-06 | Phase 2 | Complete |
+| DATA-07 | Phase 2 | Complete |
+| DATA-08 | Phase 2 | Complete |
 | DATA-09 | Phase 2 | Complete |
 | DATA-10 | Phase 2 | Complete |
 | DATA-11 | Phase 2 | Complete |
-| DATA-12 | Phase 2 | Pending |
-| DATA-13 | Phase 2 | Pending |
+| DATA-12 | Phase 2 | Complete |
+| DATA-13 | Phase 2 | Complete |
 | DATA-14 | Phase 2 | Complete |
 | DATA-15 | Phase 2 | Complete |
 | DATA-16 | Phase 2 | Complete |
