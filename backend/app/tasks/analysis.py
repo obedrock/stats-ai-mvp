@@ -3,15 +3,12 @@ import json
 import logging
 import os
 import shutil
-import signal
-import subprocess
-import sys
 import tempfile
 import uuid
 
+import docker
 import pandas as pd
 import redis
-from celery import current_task  # noqa: F401
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -23,27 +20,49 @@ from app.services.r_interpreter import explain_r_error, interpret_ols_results
 
 logger = logging.getLogger(__name__)
 
-_current_proc = None
+R_SANDBOX_IMAGE = "stats-ai-r-sandbox"
 
 
-def _sigterm_handler(signum, frame):
-    """Kill the R subprocess when Celery revokes the task."""
-    global _current_proc
-    if _current_proc and _current_proc.poll() is None:
-        _current_proc.terminate()
-        try:
-            _current_proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            _current_proc.kill()
-    sys.exit(0)
+def _run_r_container(volumes: dict, timeout: int = 60) -> tuple[int, str, str]:
+    """Run R script in a sandboxed Docker container via the Docker SDK.
 
+    Args:
+        volumes: Dict mapping host paths to container mount specs,
+                 e.g. {"/tmp/job-x/analysis.R": {"bind": "/analysis.R", "mode": "ro"}}
+        timeout: Max seconds to wait for container to finish.
 
-signal.signal(signal.SIGTERM, _sigterm_handler)
+    Returns:
+        (exit_code, stdout, stderr) tuple.
+    """
+    client = docker.from_env()
+    container = client.containers.run(
+        R_SANDBOX_IMAGE,
+        command=["Rscript", "/analysis.R"],
+        volumes=volumes,
+        network_mode="none",
+        mem_limit="512m",
+        nano_cpus=1_000_000_000,  # 1.0 CPU
+        read_only=True,
+        tmpfs={"/tmp": "size=64m"},
+        user="1000",
+        detach=True,
+    )
+    try:
+        result = container.wait(timeout=timeout)
+        exit_code = result.get("StatusCode", -1)
+        stdout = container.logs(stdout=True, stderr=False).decode("utf-8", errors="replace")
+        stderr = container.logs(stdout=False, stderr=True).decode("utf-8", errors="replace")
+    except Exception:
+        container.kill()
+        raise RuntimeError("R script execution timed out or failed")
+    finally:
+        container.remove(force=True)
+
+    return exit_code, stdout, stderr
 
 
 @celery_app.task(bind=True, name="run_r_analysis")
 def run_r_analysis(self, r_script: str, job_id: str):
-    global _current_proc
     self.update_state(state="PROGRESS", meta={"stage": "queued", "job_id": job_id})
 
     sandbox_base = os.environ.get("R_SANDBOX_TMPDIR", tempfile.gettempdir())
@@ -56,54 +75,14 @@ def run_r_analysis(self, r_script: str, job_id: str):
 
         self.update_state(state="PROGRESS", meta={"stage": "running_r", "job_id": job_id})
 
-        try:
-            _current_proc = subprocess.Popen(
-                [
-                    "docker",
-                    "run",
-                    "--rm",
-                    "--network",
-                    "none",
-                    "--memory",
-                    "512m",
-                    "--cpus",
-                    "1.0",
-                    "--read-only",
-                    "--tmpfs",
-                    "/tmp:size=64m",
-                    "--user",
-                    "1000",
-                    "-v",
-                    f"{script_path}:/analysis.R:ro",
-                    "stats-ai-r-sandbox",
-                    "Rscript",
-                    "/analysis.R",
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            stdout, stderr = _current_proc.communicate(timeout=60)
-            returncode = _current_proc.returncode
-        except subprocess.TimeoutExpired:
-            _current_proc.kill()
-            _current_proc.communicate()
-            _current_proc = None
-            raise RuntimeError("R script execution timed out after 60 seconds")
-        finally:
-            _current_proc = None
-
-        if returncode != 0:
-            return {
-                "status": "error",
-                "stdout": stdout.decode("utf-8", errors="replace"),
-                "stderr": stderr.decode("utf-8", errors="replace"),
-                "job_id": job_id,
-            }
+        exit_code, stdout, stderr = _run_r_container(
+            volumes={script_path: {"bind": "/analysis.R", "mode": "ro"}},
+        )
 
         return {
-            "status": "success",
-            "stdout": stdout.decode("utf-8", errors="replace"),
-            "stderr": stderr.decode("utf-8", errors="replace"),
+            "status": "success" if exit_code == 0 else "error",
+            "stdout": stdout,
+            "stderr": stderr,
             "job_id": job_id,
         }
     finally:
@@ -112,25 +91,10 @@ def run_r_analysis(self, r_script: str, job_id: str):
 
 @celery_app.task(bind=True, name="run_ols_analysis")
 def run_ols_analysis(self, job_id: str, prompt: str):
-    """Full OLS analysis pipeline: data reconstruction -> Claude Stage 1 -> R Docker -> Claude Stage 2 -> Job update.
-
-    Steps:
-    1. Update state to "preparing"
-    2. Load Job from DB (sync SQLAlchemy session)
-    3. Reconstruct DataFrame from Redis cache keys stored on Job
-    4. Get column names from DataFrame
-    5. Call Stage 1 Claude: generate_ols_slots() -> dep_var, indep_vars, transformations
-    6. Render R script: render_ols_script() -> filled R script string
-    7. Write CSV + R script to tmpdir, run Docker with two volume mounts
-    8. On success: parse JSON stdout, call Stage 2 Claude, update Job with success fields
-    9. On R error: call error interpretation, update Job with error fields
-    10. Return {"status": ..., "job_id": ...}
-    """
-    global _current_proc
+    """Full OLS analysis pipeline: data reconstruction -> Claude Stage 1 -> R Docker -> Claude Stage 2 -> Job update."""
 
     self.update_state(state="PROGRESS", meta={"stage": "preparing", "job_id": job_id})
 
-    # Sync SQLAlchemy engine for Celery worker context
     from app.config import settings
     database_url = settings.database_url.replace("+asyncpg", "")
     engine = create_engine(database_url)
@@ -144,8 +108,7 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             cached_data_keys = json.loads(job.cached_data_keys) if job.cached_data_keys else []
 
         # Step 3: Reconstruct DataFrame from Redis cache
-        redis_url = settings.redis_url
-        redis_client = redis.from_url(redis_url)
+        redis_client = redis.from_url(settings.redis_url)
 
         dataframes: dict[str, pd.DataFrame] = {}
         for cache_key in cached_data_keys:
@@ -157,15 +120,14 @@ def run_ols_analysis(self, job_id: str, prompt: str):
                 df.index = pd.to_datetime(df.index, unit="ms", utc=True)
             elif df.index.tz is None:
                 df.index = df.index.tz_localize("UTC")
-            # Use series_id from cache key (format: source:series_id:start:end)
             series_id = cache_key.split(":")[1]
             dataframes[series_id] = df
 
         result = clean_and_merge(dataframes)
         df = result["merged_df"]
 
-        # Step 4: Get column names (exclude date index)
-        column_names = [col for col in df.columns.tolist()]
+        # Step 4: Get column names
+        column_names = list(df.columns)
 
         # Step 5: Call Stage 1 Claude
         self.update_state(state="PROGRESS", meta={"stage": "generating_code", "job_id": job_id})
@@ -177,10 +139,7 @@ def run_ols_analysis(self, job_id: str, prompt: str):
         # Step 6: Render R script
         r_script = render_ols_script(dep_var, indep_vars, transformations)
 
-        # Step 7: Write CSV + R script to a host-shared directory.
-        # The celery-worker uses docker.sock so bind-mount paths resolve on the
-        # Docker host, not inside this container. R_SANDBOX_TMPDIR is bind-mounted
-        # to the same host path in docker-compose.prod.yml.
+        # Step 7: Write CSV + R script, run in Docker container
         sandbox_base = os.environ.get("R_SANDBOX_TMPDIR", tempfile.gettempdir())
         tmpdir = os.path.join(sandbox_base, f"job-{job_id}")
         os.makedirs(tmpdir, exist_ok=True)
@@ -191,76 +150,28 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             with open(script_path, "w") as f:
                 f.write(r_script)
 
-            # Debug logging for Docker volume mount diagnosis
-            csv_size = os.path.getsize(csv_path)
-            script_size = os.path.getsize(script_path)
             logger.info(
-                "[run_ols_analysis] job=%s R_SANDBOX_TMPDIR=%s sandbox_base=%s tmpdir=%s "
-                "csv_path=%s csv_size=%d script_path=%s script_size=%d "
-                "csv_exists=%s script_exists=%s",
-                job_id,
-                os.environ.get("R_SANDBOX_TMPDIR", "<NOT SET>"),
-                sandbox_base,
-                tmpdir,
-                csv_path, csv_size,
-                script_path, script_size,
-                os.path.isfile(csv_path),
-                os.path.isfile(script_path),
+                "[run_ols_analysis] job=%s tmpdir=%s csv_size=%d script_size=%d",
+                job_id, tmpdir, os.path.getsize(csv_path), os.path.getsize(script_path),
             )
-            logger.info(
-                "[run_ols_analysis] job=%s csv_head=%s",
-                job_id,
-                open(csv_path).readline().strip(),
-            )
-            logger.info(
-                "[run_ols_analysis] job=%s r_script_head=%s",
-                job_id,
-                r_script[:200],
-            )
-
-            docker_cmd = [
-                "docker", "run", "--rm",
-                "--network", "none",
-                "--memory", "512m",
-                "--cpus", "1.0",
-                "--read-only",
-                "--tmpfs", "/tmp:size=64m",
-                "--user", "1000",
-                "-v", f"{script_path}:/analysis.R:ro",
-                "-v", f"{csv_path}:/data/data.csv:ro",
-                "stats-ai-r-sandbox",
-                "Rscript", "/analysis.R",
-            ]
-            logger.info("[run_ols_analysis] job=%s docker_cmd=%s", job_id, " ".join(docker_cmd))
 
             self.update_state(state="PROGRESS", meta={"stage": "running_r", "job_id": job_id})
 
-            try:
-                _current_proc = subprocess.Popen(
-                    docker_cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-                stdout, stderr = _current_proc.communicate(timeout=60)
-                returncode = _current_proc.returncode
-                logger.info(
-                    "[run_ols_analysis] job=%s returncode=%d stdout_len=%d stderr_len=%d stderr_head=%s",
-                    job_id, returncode, len(stdout), len(stderr),
-                    stderr.decode("utf-8", errors="replace")[:500],
-                )
-            except subprocess.TimeoutExpired:
-                _current_proc.kill()
-                _current_proc.communicate()
-                _current_proc = None
-                raise RuntimeError("R script execution timed out after 60 seconds")
-            finally:
-                _current_proc = None
+            exit_code, stdout, stderr = _run_r_container(
+                volumes={
+                    script_path: {"bind": "/analysis.R", "mode": "ro"},
+                    csv_path: {"bind": "/data/data.csv", "mode": "ro"},
+                },
+            )
+            logger.info(
+                "[run_ols_analysis] job=%s exit_code=%d stdout_len=%d stderr_head=%s",
+                job_id, exit_code, len(stdout), stderr[:500],
+            )
 
             # Step 8: On R success
-            if returncode == 0:
-                r_result = json.loads(stdout.decode("utf-8"))
+            if exit_code == 0:
+                r_result = json.loads(stdout)
 
-                # Process plotly_charts: parse inner JSON string for each chart
                 if "plotly_charts" in r_result:
                     processed_charts = []
                     for chart in r_result["plotly_charts"]:
@@ -281,7 +192,7 @@ def run_ols_analysis(self, job_id: str, prompt: str):
                     job.stage = "done"
                     job.r_script = r_script
                     job.r_result_json = json.dumps(r_result)
-                    job.result_stdout = stdout.decode("utf-8", errors="replace")
+                    job.result_stdout = stdout
                     job.interpretation = interp["interpretation"]
                     job.follow_up_suggestions = json.dumps(interp["follow_up_suggestions"])
                     session.commit()
@@ -290,16 +201,15 @@ def run_ols_analysis(self, job_id: str, prompt: str):
 
             # Step 9: On R error
             else:
-                stderr_text = stderr.decode("utf-8", errors="replace")
                 self.update_state(state="PROGRESS", meta={"stage": "generating_interpretation", "job_id": job_id})
-                err = explain_r_error(prompt, stderr_text)
+                err = explain_r_error(prompt, stderr)
 
                 with Session(engine) as session:
                     job = session.get(Job, uuid.UUID(job_id))
                     job.status = "error"
                     job.stage = "done"
                     job.r_script = r_script
-                    job.result_stderr = stderr_text
+                    job.result_stderr = stderr
                     job.error_explanation = err["error_explanation"]
                     job.suggested_prompt = err["suggested_prompt"]
                     session.commit()
@@ -309,7 +219,6 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             shutil.rmtree(tmpdir, ignore_errors=True)
 
     except Exception as exc:
-        # Unexpected exception: store error on Job and re-raise for Celery
         try:
             with Session(engine) as session:
                 job = session.get(Job, uuid.UUID(job_id))
@@ -319,5 +228,5 @@ def run_ols_analysis(self, job_id: str, prompt: str):
                     job.error_message = str(exc)
                     session.commit()
         except Exception:
-            pass  # Don't mask the original exception
+            pass
         raise
