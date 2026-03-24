@@ -1,12 +1,24 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ComponentProps } from "react";
 import type { ChartData } from "@/types/analysis";
 
-// Lazy-load plotly to avoid CJS/ESM interop issues in production builds.
-// react-plotly.js's default entry wires factory + plotly together internally.
-const Plot = lazy(() =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  import("react-plotly.js").then((mod) => ({ default: (mod as any).default || mod }))
-);
+// Lazy-load plotly to avoid CJS/ESM interop issues in production builds
+const PlotLazy = lazy(() => import("react-plotly.js"));
+
+type PlotProps = ComponentProps<typeof PlotLazy>;
+
+function PlotChart(props: PlotProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-[360px] text-sm text-muted-foreground">
+          Loading chart...
+        </div>
+      }
+    >
+      <PlotLazy {...props} />
+    </Suspense>
+  );
+}
 
 interface ChartGridProps {
   charts: ChartData[];
@@ -23,36 +35,27 @@ export function ChartGrid({ charts }: ChartGridProps) {
             className="bg-slate-800 border border-slate-700 rounded-lg p-4"
             aria-label={`Chart: ${chart.name.replace(/_/g, " ")}`}
           >
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-[360px] text-sm text-muted-foreground">
-                  Loading chart...
-                </div>
-              }
-            >
-              <Plot
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                data={chart.data as any[]}
-                layout={{
-                  ...(chart.layout as Record<string, unknown>),
-                  paper_bgcolor: "transparent",
-                  plot_bgcolor: "transparent",
-                  font: { color: "#f1f5f9" },
-                  xaxis: {
-                    ...((chart.layout?.xaxis as Record<string, unknown>) ?? {}),
-                    gridcolor: "#334155",
-                  },
-                  yaxis: {
-                    ...((chart.layout?.yaxis as Record<string, unknown>) ?? {}),
-                    gridcolor: "#334155",
-                  },
-                  margin: { l: 50, r: 20, t: 40, b: 40 },
-                }}
-                useResizeHandler={true}
-                style={{ width: "100%", height: "360px" }}
-                config={{ responsive: true, displayModeBar: false }}
-              />
-            </Suspense>
+            <PlotChart
+              data={chart.data as Record<string, unknown>[]}
+              layout={{
+                ...(chart.layout as Record<string, unknown>),
+                paper_bgcolor: "transparent",
+                plot_bgcolor: "transparent",
+                font: { color: "#f1f5f9" },
+                xaxis: {
+                  ...((chart.layout?.xaxis as Record<string, unknown>) ?? {}),
+                  gridcolor: "#334155",
+                },
+                yaxis: {
+                  ...((chart.layout?.yaxis as Record<string, unknown>) ?? {}),
+                  gridcolor: "#334155",
+                },
+                margin: { l: 50, r: 20, t: 40, b: 40 },
+              }}
+              useResizeHandler={true}
+              style={{ width: "100%", height: "360px" }}
+              config={{ responsive: true, displayModeBar: false }}
+            />
           </div>
         ))}
       </div>
