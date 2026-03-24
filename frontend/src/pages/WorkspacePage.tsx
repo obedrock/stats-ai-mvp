@@ -11,6 +11,13 @@ import { QuickDetailedToggle } from "@/components/QuickDetailedToggle";
 import { DataPreviewPanel } from "@/components/DataPreviewPanel";
 import { AssumptionsBanner } from "@/components/AssumptionsBanner";
 import { AssumptionsChecklist } from "@/components/AssumptionsChecklist";
+import { InterpretationSection } from "@/components/InterpretationSection";
+import { CoefficientTable } from "@/components/CoefficientTable";
+import { DiagnosticsRow } from "@/components/DiagnosticsRow";
+import { ChartGrid } from "@/components/ChartGrid";
+import { RCodeBlock } from "@/components/RCodeBlock";
+import { ErrorResultCard } from "@/components/ErrorResultCard";
+import { FollowUpRow } from "@/components/FollowUpRow";
 import { apiFetch } from "@/lib/api";
 import { useAnalysisStore } from "@/store/analysis";
 import type {
@@ -22,12 +29,32 @@ import type {
   AssumptionItem,
   ParsedSource,
 } from "@/types/data";
+import type { AnalysisResult, AnalysisError } from "@/types/analysis";
 import type { ColumnMapping } from "@/components/ColumnMappingTable";
 
 // Shape returned by /data/fetch and /data/resolve-frequency
 interface JobCreatedResponse {
   id: string;
   status: string;
+}
+
+// Shape returned by GET /analysis/{job_id}
+interface AnalysisPollResponse {
+  status: string;
+  stage?: string;
+  job_id: string;
+  // Success fields (present when status === "success")
+  coefficients?: AnalysisResult["coefficients"];
+  model_summary?: AnalysisResult["model_summary"];
+  diagnostics?: AnalysisResult["diagnostics"];
+  charts?: AnalysisResult["charts"];
+  r_code?: string;
+  interpretation?: string;
+  follow_up_suggestions?: AnalysisResult["follow_up_suggestions"];
+  // Error fields (present when status === "error")
+  error_explanation?: string;
+  suggested_prompt?: string;
+  r_stderr?: string;
 }
 
 // Shape returned by /data/preview/{job_id}
@@ -60,6 +87,9 @@ export default function WorkspacePage() {
     assumptions,
     jobId,
     pipelineStage,
+    analysisJobId,
+    analysisResult,
+    analysisError,
     setSources,
     updateSource,
     removeSource,
@@ -70,6 +100,10 @@ export default function WorkspacePage() {
     setAssumptions,
     setPipelineStage,
     setJobId,
+    setPrompt,
+    setAnalysisJobId,
+    setAnalysisComplete,
+    setAnalysisError,
     reset,
   } = useAnalysisStore();
 
@@ -90,6 +124,47 @@ export default function WorkspacePage() {
       return 2000;
     },
   });
+
+  // Poll GET /analysis/{analysisJobId} when running_analysis stage
+  const { data: analysisPollData } = useQuery<AnalysisPollResponse>({
+    queryKey: ["analysis", analysisJobId],
+    queryFn: () => apiFetch<AnalysisPollResponse>(`/analysis/${analysisJobId}`),
+    enabled: !!analysisJobId && pipelineStage === "running_analysis",
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (!data) return 2000;
+      if (data.status === "success" || data.status === "error") return false;
+      return 2000;
+    },
+  });
+
+  // Handle analysis poll results
+  React.useEffect(() => {
+    if (!analysisPollData || pipelineStage !== "running_analysis") return;
+
+    if (analysisPollData.status === "success" && analysisPollData.coefficients) {
+      setAnalysisComplete({
+        job_id: analysisPollData.job_id,
+        status: "success",
+        coefficients: analysisPollData.coefficients,
+        model_summary: analysisPollData.model_summary!,
+        diagnostics: analysisPollData.diagnostics!,
+        charts: analysisPollData.charts!,
+        r_code: analysisPollData.r_code!,
+        interpretation: analysisPollData.interpretation!,
+        follow_up_suggestions: analysisPollData.follow_up_suggestions!,
+      });
+    } else if (analysisPollData.status === "error" && analysisPollData.error_explanation) {
+      setAnalysisError({
+        job_id: analysisPollData.job_id,
+        status: "error",
+        error_explanation: analysisPollData.error_explanation,
+        suggested_prompt: analysisPollData.suggested_prompt!,
+        r_stderr: analysisPollData.r_stderr!,
+        r_code: analysisPollData.r_code ?? "",
+      });
+    }
+  }, [analysisPollData, pipelineStage, setAnalysisComplete, setAnalysisError]);
 
   // Handle preview poll results
   React.useEffect(() => {
@@ -272,8 +347,35 @@ export default function WorkspacePage() {
     // Keep uploadResult in store; user can proceed to fetch with upload data
   }
 
-  function handleRunAnalysis() {
-    // Phase 3 wiring: to be implemented
+  async function handleRunAnalysis() {
+    setError(null);
+    const currentPrompt = useAnalysisStore.getState().prompt;
+    const currentJobId = useAnalysisStore.getState().jobId;
+    if (!currentJobId || !currentPrompt) return;
+
+    try {
+      const response = await apiFetch<{ id: string; status: string }>("/analysis/run", {
+        method: "POST",
+        body: JSON.stringify({ job_id: currentJobId, prompt: currentPrompt }),
+      });
+      setAnalysisJobId(response.id);
+      setPipelineStage("running_analysis");
+    } catch {
+      setError("Could not start analysis. Please try again.");
+    }
+  }
+
+  function handleFollowUpSelect(promptText: string) {
+    setPrompt(promptText);
+    // Reset to idle so user can review/edit before submitting (per D-14)
+    setPipelineStage("idle");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleRetryPrompt(suggestedPrompt: string) {
+    setPrompt(suggestedPrompt);
+    setPipelineStage("idle");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleAssumptionsConfirm() {
@@ -440,6 +542,61 @@ export default function WorkspacePage() {
             <DataPreviewPanel
               preview={preview}
               onRunAnalysis={handleRunAnalysis}
+            />
+          </div>
+        )}
+
+        {/* Running analysis stage */}
+        {pipelineStage === "running_analysis" && analysisJobId && (
+          <div className="flex flex-col gap-4">
+            <JobStatusCard
+              jobId={analysisJobId}
+              onComplete={() => {
+                // Analysis polling handles transition
+              }}
+              onCancel={() => reset()}
+            />
+          </div>
+        )}
+
+        {/* Analysis complete — full results (D-01 scrollable narrative order) */}
+        {pipelineStage === "analysis_complete" && analysisResult && (
+          <div className="flex flex-col gap-8">
+            <PromptInput onSubmit={handlePromptSubmit} disabled={false} />
+
+            <InterpretationSection text={analysisResult.interpretation} />
+
+            <div className="border-t border-slate-700" />
+            <CoefficientTable
+              coefficients={analysisResult.coefficients}
+              modelSummary={analysisResult.model_summary}
+            />
+
+            <div className="border-t border-slate-700" />
+            <DiagnosticsRow diagnostics={analysisResult.diagnostics} />
+
+            <div className="border-t border-slate-700" />
+            <ChartGrid charts={analysisResult.charts} />
+
+            <div className="border-t border-slate-700" />
+            <RCodeBlock code={analysisResult.r_code} />
+
+            <div className="border-t border-slate-700" />
+            <FollowUpRow
+              suggestions={analysisResult.follow_up_suggestions}
+              onSelect={handleFollowUpSelect}
+            />
+          </div>
+        )}
+
+        {/* Analysis error — error card replaces results (D-09) */}
+        {pipelineStage === "analysis_error" && analysisError && (
+          <div className="flex flex-col gap-4">
+            <PromptInput onSubmit={handlePromptSubmit} disabled={false} />
+
+            <ErrorResultCard
+              error={analysisError}
+              onRetry={handleRetryPrompt}
             />
           </div>
         )}
