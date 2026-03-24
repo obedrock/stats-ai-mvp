@@ -286,7 +286,7 @@ export default function WorkspacePage() {
   }
 
   function handleAssumptionsConfirm() {
-    setPipelineStage("confirming_sources");
+    handleFetchData();
   }
 
   const isParsingOrFetching =
