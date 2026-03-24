@@ -130,7 +130,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ANAL-07 | Phase 3 | Pending |
 | ANAL-08 | Phase 3 | Pending |
 | ANAL-09 | Phase 4 | Pending |
-| ANAL-10 | Phase 3 | Pending |
+| ANAL-10 | Phase 4 | Pending |
 | RSLT-01 | Phase 3 | Pending |
 | RSLT-02 | Phase 3 | Pending |
 | RSLT-03 | Phase 3 | Pending |

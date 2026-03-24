@@ -73,7 +73,7 @@ Plans:
 ### Phase 3: Core Analysis Engine
 **Goal**: Users can submit an OLS regression prompt and receive a complete result: plain-English interpretation, coefficient table, diagnostic test outputs, interactive charts, the generated R code, and actionable error feedback if R fails
 **Depends on**: Phase 2
-**Requirements**: ANAL-01, ANAL-05, ANAL-06, ANAL-07, ANAL-08, ANAL-10, RSLT-01, RSLT-02, RSLT-03, RSLT-04, RSLT-05, RSLT-06
+**Requirements**: ANAL-01, ANAL-05, ANAL-06, ANAL-07, ANAL-08, RSLT-01, RSLT-02, RSLT-03, RSLT-04, RSLT-05, RSLT-06
 **Success Criteria** (what must be TRUE):
   1. User submits an OLS regression prompt and receives results with a coefficient table showing standard errors, p-values, and confidence intervals
   2. Results always include Breusch-Pagan, Durbin-Watson, VIF, and Shapiro-Wilk test outputs alongside the main regression output
@@ -81,9 +81,10 @@ Plans:
   4. The generated R code for the analysis is visible and copyable on the results page
   5. When R returns an error, the user sees a plain-English explanation of what went wrong and what to try next — not a raw R stack trace
   6. After receiving results, Claude suggests 2-3 related follow-up tests the user might want to run
-**Plans**: 5 plans
+**Plans**: 6 plans
 
 Plans:
+- [ ] 03-00-PLAN.md � Wave 0 test stubs (backend + frontend)
 - [ ] 03-01-PLAN.md — Type contracts, R template, Job model migration
 - [ ] 03-02-PLAN.md — Claude API services (Stage 1 code gen + Stage 2 interpretation)
 - [ ] 03-03-PLAN.md — Backend pipeline: Celery task, analysis router, API endpoints
@@ -95,7 +96,7 @@ Plans:
 ### Phase 4: Extended Analysis Types
 **Goal**: Users can run logistic regression, panel data regression (fixed/random effects), time-series regression (ARIMA, VAR), standalone hypothesis tests, and compare multiple model specifications — all from natural language prompts
 **Depends on**: Phase 3
-**Requirements**: ANAL-02, ANAL-03, ANAL-04, ANAL-09
+**Requirements**: ANAL-02, ANAL-03, ANAL-04, ANAL-09, ANAL-10
 **Success Criteria** (what must be TRUE):
   1. User submits a prompt for a binary outcome variable and the system runs logistic regression with appropriate diagnostics
   2. User submits a prompt for panel data (e.g., country-year data) and the system runs fixed-effects and random-effects regression with a Hausman test

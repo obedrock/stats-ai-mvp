@@ -49,7 +49,6 @@ created: 2026-03-24
 | 03-05-01 | 05 | 2 | RSLT-04 | frontend | `npx vitest run --reporter=verbose src/components/ResultsPanel` | ❌ W0 | ⬜ pending |
 | 03-05-02 | 05 | 2 | RSLT-05 | frontend | `npx vitest run --reporter=verbose src/components/CodeViewer` | ❌ W0 | ⬜ pending |
 | 03-06-01 | 06 | 3 | RSLT-06 | unit | `uv run pytest tests/test_interpretation.py -k follow_up` | ❌ W0 | ⬜ pending |
-| 03-06-02 | 06 | 3 | ANAL-10 | unit | `uv run pytest tests/test_interpretation.py -k hypothesis` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -60,7 +59,7 @@ created: 2026-03-24
 - [ ] `backend/tests/test_r_template.py` — stubs for OLS template output validation (ANAL-01, ANAL-05)
 - [ ] `backend/tests/test_code_gen.py` — stubs for Claude prompt-to-R code generation (ANAL-06, ANAL-07)
 - [ ] `backend/tests/test_r_execution.py` — stubs for R subprocess execution and error handling (ANAL-08)
-- [ ] `backend/tests/test_interpretation.py` — stubs for result interpretation and follow-ups (RSLT-01, RSLT-02, RSLT-03, RSLT-06, ANAL-10)
+- [ ] `backend/tests/test_interpretation.py` — stubs for result interpretation and follow-ups (RSLT-01, RSLT-02, RSLT-03, RSLT-06)
 - [ ] `frontend/src/components/__tests__/ResultsPanel.test.tsx` — stubs for results rendering (RSLT-04, RSLT-05)
 - [ ] `react-plotly.js` and `plotly.js-dist-min` npm install
 
