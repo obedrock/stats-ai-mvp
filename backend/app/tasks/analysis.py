@@ -170,22 +170,36 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             with open(script_path, "w") as f:
                 f.write(r_script)
 
+            # DEBUG: log CSV contents (first 3 lines)
+            with open(csv_path) as f:
+                csv_lines = [f.readline() for _ in range(3)]
             logger.info(
-                "[run_ols_analysis] job=%s tmpdir=%s csv_size=%d script_size=%d",
-                job_id, tmpdir, os.path.getsize(csv_path), os.path.getsize(script_path),
+                "[run_ols_analysis] job=%s columns=%s shape=%s csv_lines=%s",
+                job_id, column_names, df.shape, csv_lines,
+            )
+
+            # DEBUG: log full R script
+            logger.info(
+                "[run_ols_analysis] job=%s R_SCRIPT_START\n%s\nR_SCRIPT_END",
+                job_id, r_script,
+            )
+
+            # DEBUG: log volume mounts
+            volumes = {
+                script_path: {"bind": "/analysis.R", "mode": "ro"},
+                csv_path: {"bind": "/data/data.csv", "mode": "ro"},
+            }
+            logger.info(
+                "[run_ols_analysis] job=%s volumes=%s",
+                job_id, volumes,
             )
 
             self.update_state(state="PROGRESS", meta={"stage": "running_r", "job_id": job_id})
 
-            exit_code, stdout, stderr = _run_r_container(
-                volumes={
-                    script_path: {"bind": "/analysis.R", "mode": "ro"},
-                    csv_path: {"bind": "/data/data.csv", "mode": "ro"},
-                },
-            )
+            exit_code, stdout, stderr = _run_r_container(volumes=volumes)
             logger.info(
-                "[run_ols_analysis] job=%s exit_code=%d stdout_len=%d stderr_head=%s",
-                job_id, exit_code, len(stdout), stderr[:500],
+                "[run_ols_analysis] job=%s exit_code=%d stdout_len=%d stdout_head=%s stderr=%s",
+                job_id, exit_code, len(stdout), stdout[:500], stderr[:1000],
             )
 
             # Step 8: On R success
