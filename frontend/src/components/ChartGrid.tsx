@@ -1,50 +1,60 @@
-import { lazy, Suspense, Component, type ComponentProps, type ReactNode } from "react";
+import { useRef, useEffect } from "react";
 import type { ChartData } from "@/types/analysis";
 
-// Lazy-load plotly to avoid CJS/ESM interop issues in production builds
-const PlotLazy = lazy(() => import("react-plotly.js"));
-
-type PlotProps = ComponentProps<typeof PlotLazy>;
-
-// Error boundary to prevent plotly crashes from blanking the whole page
-class ChartErrorBoundary extends Component<
-  { children: ReactNode; name: string },
-  { error: string | null }
-> {
-  state = { error: null as string | null };
-
-  static getDerivedStateFromError(err: Error) {
-    return { error: err.message };
-  }
-
-  render() {
-    if (this.state.error) {
-      return (
-        <div className="flex items-center justify-center h-[360px] text-sm text-muted-foreground">
-          Chart failed to render: {this.state.error}
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-function PlotChart(props: PlotProps) {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center h-[360px] text-sm text-muted-foreground">
-          Loading chart...
-        </div>
-      }
-    >
-      <PlotLazy {...props} />
-    </Suspense>
-  );
-}
+// Render plotly charts using the imperative API (Plotly.newPlot) instead of
+// react-plotly.js component. The react-plotly.js component crashes with React 19
+// error #306 because it tries to render plotly internal objects as React children.
 
 interface ChartGridProps {
   charts: ChartData[];
+}
+
+function PlotDiv({ chart }: { chart: ChartData }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    import("plotly.js-dist-min").then((Plotly) => {
+      const lib = (Plotly as { default?: typeof Plotly }).default || Plotly;
+      if (!mounted || !ref.current) return;
+
+      const darkLayout = {
+        ...(chart.layout as Record<string, unknown>),
+        paper_bgcolor: "transparent",
+        plot_bgcolor: "transparent",
+        font: { color: "#f1f5f9" },
+        xaxis: {
+          ...((chart.layout?.xaxis as Record<string, unknown>) ?? {}),
+          gridcolor: "#334155",
+        },
+        yaxis: {
+          ...((chart.layout?.yaxis as Record<string, unknown>) ?? {}),
+          gridcolor: "#334155",
+        },
+        margin: { l: 50, r: 20, t: 40, b: 40 },
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (lib as any).newPlot(ref.current, chart.data, darkLayout, {
+        responsive: true,
+        displayModeBar: false,
+      });
+    });
+
+    return () => {
+      mounted = false;
+      if (ref.current) {
+        import("plotly.js-dist-min").then((Plotly) => {
+          const lib = (Plotly as { default?: typeof Plotly }).default || Plotly;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (ref.current) (lib as any).purge(ref.current);
+        });
+      }
+    };
+  }, [chart]);
+
+  return <div ref={ref} style={{ width: "100%", height: "360px" }} />;
 }
 
 export function ChartGrid({ charts }: ChartGridProps) {
@@ -60,29 +70,7 @@ export function ChartGrid({ charts }: ChartGridProps) {
             className="bg-slate-800 border border-slate-700 rounded-lg p-4"
             aria-label={`Chart: ${chart.name.replace(/_/g, " ")}`}
           >
-            <ChartErrorBoundary name={chart.name}>
-              <PlotChart
-                data={chart.data as Record<string, unknown>[]}
-                layout={{
-                  ...(chart.layout as Record<string, unknown>),
-                  paper_bgcolor: "transparent",
-                  plot_bgcolor: "transparent",
-                  font: { color: "#f1f5f9" },
-                  xaxis: {
-                    ...((chart.layout?.xaxis as Record<string, unknown>) ?? {}),
-                    gridcolor: "#334155",
-                  },
-                  yaxis: {
-                    ...((chart.layout?.yaxis as Record<string, unknown>) ?? {}),
-                    gridcolor: "#334155",
-                  },
-                  margin: { l: 50, r: 20, t: 40, b: 40 },
-                }}
-                useResizeHandler={true}
-                style={{ width: "100%", height: "360px" }}
-                config={{ responsive: true, displayModeBar: false }}
-              />
-            </ChartErrorBoundary>
+            <PlotDiv chart={chart} />
           </div>
         ))}
       </div>
