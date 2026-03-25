@@ -150,6 +150,10 @@ async def get_analysis_result(
         bp = diag.get("breusch_pagan", {})
         dw = diag.get("durbin_watson", {})
         sw = diag.get("shapiro_wilk", {})
+        # R returns [] (empty list) for VIF when there's only one predictor;
+        # coerce to dict for Pydantic validation
+        vif_raw = diag.get("vif", {})
+        vif_dict = vif_raw if isinstance(vif_raw, dict) else {}
         diagnostics = DiagnosticsBundle(
             breusch_pagan=DiagnosticResult(
                 statistic=bp.get("statistic", 0.0),
@@ -160,7 +164,7 @@ async def get_analysis_result(
                 statistic=dw.get("statistic", 0.0),
                 p_value=dw.get("p_value"),
             ),
-            vif=diag.get("vif", {}),
+            vif=vif_dict,
             shapiro_wilk=DiagnosticResult(
                 statistic=sw.get("statistic", 0.0),
                 p_value=sw.get("p_value"),
