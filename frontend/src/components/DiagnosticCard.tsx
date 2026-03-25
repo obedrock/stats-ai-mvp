@@ -30,10 +30,10 @@ export function DiagnosticCard({
           <Badge className={badgeClasses[verdict]}>{verdict}</Badge>
         </div>
         <p className="text-sm font-medium text-foreground">
-          {statistic.toFixed(4)}
+          {statistic != null ? statistic.toFixed(4) : "N/A"}
         </p>
         <p className="text-xs text-muted-foreground">
-          p = {pValue !== null ? pValue.toFixed(4) : "---"}
+          p = {pValue != null ? pValue.toFixed(4) : "---"}
         </p>
       </CardContent>
     </Card>

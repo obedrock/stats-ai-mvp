@@ -13,7 +13,7 @@ export function InterpretationSection({ text }: InterpretationSectionProps) {
             Interpretation
           </h2>
           <div className="text-sm text-foreground leading-relaxed whitespace-pre-line">
-            {text}
+            {typeof text === "string" ? text : JSON.stringify(text)}
           </div>
         </CardContent>
       </Card>
