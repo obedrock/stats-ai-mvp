@@ -7,7 +7,7 @@
 
 suppressPackageStartupMessages(library(lmtest))
 suppressPackageStartupMessages(library(sandwich))
-suppressPackageStartupMessages(library(car))
+has_car <- suppressWarnings(requireNamespace("car", quietly = TRUE))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(plotly))
 suppressPackageStartupMessages(library(jsonlite))
@@ -35,7 +35,7 @@ ci <- confint(model)
 # ── Diagnostics ───────────────────────────────────────────────────────────────
 bp_test  <- bptest(model)
 dw_test  <- dwtest(model)
-vif_vals <- tryCatch(vif(model), error = function(e) NULL)
+vif_vals <- if (has_car) tryCatch(car::vif(model), error = function(e) NULL) else NULL
 
 # Shapiro-Wilk: requires 3 <= n <= 5000; sample if too large, skip if too small
 resids  <- residuals(model)

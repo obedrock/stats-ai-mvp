@@ -64,11 +64,16 @@ def generate_ols_slots(prompt: str, column_names: list[str]) -> dict:
     columns_str = ", ".join(column_names)
     system_prompt = (
         f"You are an econometrician configuring an OLS regression. "
-        f"Available columns (exact case, from cleaned data): {columns_str}. "
+        f"The data is in an R data frame called `df` with these columns: {columns_str}. "
         "Identify the dependent variable, independent variables, and any required "
         "transformations (log, lag, percent change). Only use column names from the "
-        "list above. If the user's prompt implies a transformation not directly "
-        "available as a column, write the R code for it in the transformations field. "
+        "list above. "
+        "CRITICAL: In the transformations field, ALL column references MUST use df$ prefix "
+        "(e.g., df$GDPC1, df$DFF). New computed columns must also be assigned to df "
+        "(e.g., df$GDP_growth <- c(NA, diff(df$GDPC1) / head(df$GDPC1, -1) * 100)). "
+        "Never use bare column names without df$ — the columns only exist inside the data frame. "
+        "The dep_var and indep_vars fields should be bare column names (without df$) since they "
+        "are used in an R formula. "
         "If no transformations are needed, return an empty string for transformations."
     )
 
