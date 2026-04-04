@@ -22,8 +22,8 @@ RUN Rscript -e "install.packages(c('ggplot2','plotly','lmtest','sandwich','plm',
 # Install security profile that disables system() and download.file()
 COPY Rprofile.site /etc/R/Rprofile.site
 
-# Create non-root user for R execution
-RUN useradd -m -u 1000 ruser
+# Create data mount point and non-root user for R execution
+RUN mkdir -p /data && useradd -m -u 1000 ruser
 USER ruser
 
 # No CMD — caller provides Rscript command
