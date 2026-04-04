@@ -35,6 +35,26 @@ def _run_r_container(volumes: dict, timeout: int = 60) -> tuple[int, str, str]:
         (exit_code, stdout, stderr) tuple.
     """
     client = docker.from_env()
+
+    # Debug: verify files exist before mounting
+    for host_path, mount in volumes.items():
+        exists = os.path.isfile(host_path)
+        size = os.path.getsize(host_path) if exists else -1
+        logger.info("[_run_r_container] mount %s -> %s exists=%s size=%d", host_path, mount["bind"], exists, size)
+
+    # Debug: test mount with a quick ls command
+    test = client.containers.run(
+        R_SANDBOX_IMAGE,
+        command=["ls", "-la", "/data/", "/analysis.R"],
+        volumes=volumes,
+        network_mode="none",
+        read_only=True,
+        tmpfs={"/tmp": "size=64m"},
+        user="1000",
+        remove=True,
+    )
+    logger.info("[_run_r_container] mount test: %s", test.decode("utf-8", errors="replace"))
+
     container = client.containers.run(
         R_SANDBOX_IMAGE,
         command=["Rscript", "/analysis.R"],
