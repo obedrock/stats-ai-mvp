@@ -15,8 +15,8 @@ function PlotDiv({ chart }: { chart: ChartData }) {
   useEffect(() => {
     let mounted = true;
 
-    import("plotly.js-dist-min").then((Plotly) => {
-      const lib = (Plotly as { default?: typeof Plotly }).default || Plotly;
+    import("plotly.js-dist-min").then((mod) => {
+      const Plotly = mod.default || mod;
       if (!mounted || !ref.current) return;
 
       const darkLayout = {
@@ -35,8 +35,7 @@ function PlotDiv({ chart }: { chart: ChartData }) {
         margin: { l: 50, r: 20, t: 40, b: 40 },
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (lib as any).newPlot(ref.current, chart.data, darkLayout, {
+      Plotly.newPlot(ref.current, chart.data as Record<string, unknown>[], darkLayout, {
         responsive: true,
         displayModeBar: false,
       });
@@ -45,10 +44,9 @@ function PlotDiv({ chart }: { chart: ChartData }) {
     return () => {
       mounted = false;
       if (ref.current) {
-        import("plotly.js-dist-min").then((Plotly) => {
-          const lib = (Plotly as { default?: typeof Plotly }).default || Plotly;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if (ref.current) (lib as any).purge(ref.current);
+        import("plotly.js-dist-min").then((mod) => {
+          const Plotly = mod.default || mod;
+          if (ref.current) Plotly.purge(ref.current);
         });
       }
     };
