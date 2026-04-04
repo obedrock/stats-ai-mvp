@@ -13,7 +13,7 @@ suppressPackageStartupMessages(library(plotly))
 suppressPackageStartupMessages(library(jsonlite))
 
 # ── Data loading ──────────────────────────────────────────────────────────────
-df <- read.csv("/data/data.csv", stringsAsFactors = FALSE, check.names = FALSE)
+df <- read.csv("/data.csv", stringsAsFactors = FALSE, check.names = FALSE)
 df$date <- as.Date(df$date)
 
 # DEBUG: print CSV diagnostics to stderr so they appear in logs

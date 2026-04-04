@@ -45,7 +45,7 @@ def _run_r_container(volumes: dict, timeout: int = 60) -> tuple[int, str, str]:
     # Debug: test mount with a quick ls command
     test = client.containers.run(
         R_SANDBOX_IMAGE,
-        command=["ls", "-la", "/data/", "/analysis.R"],
+        command=["ls", "-la", "/data.csv", "/analysis.R"],
         volumes=volumes,
         network_mode="none",
         read_only=True,
@@ -211,7 +211,7 @@ def run_ols_analysis(self, job_id: str, prompt: str):
             # DEBUG: log volume mounts
             volumes = {
                 script_path: {"bind": "/analysis.R", "mode": "ro"},
-                csv_path: {"bind": "/data/data.csv", "mode": "ro"},
+                csv_path: {"bind": "/data.csv", "mode": "ro"},
             }
             logger.info(
                 "[run_ols_analysis] job=%s volumes=%s",
